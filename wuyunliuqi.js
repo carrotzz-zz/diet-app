@@ -362,7 +362,6 @@ function getPlainGuidance(wylq, weather, cityInfo) {
   const allAvoid = [...new Set([...keData.avoidList])];
 
   return {
-    // 一句话标题
     headline: keData.headline,
     // 身体感受
     bodySignals: keData.bodySignals,
@@ -393,5 +392,236 @@ function getPlainGuidance(wylq, weather, cityInfo) {
       keQi: qi.keQi,
       dateRange: qi.dateRange,
     },
+  };
+}
+
+// ========== 冲突分析引擎 ==========
+
+// 气候区饮食文化特征
+const REGION_FOOD_CULTURE = {
+  '华南暖湿': { staple:'米饭', taste:'清淡、喜煲汤、喜海鲜', habit:'老火靓汤、凉茶' },
+  '华东湿热': { staple:'米饭', taste:'咸鲜、偏甜', habit:'红烧、清蒸' },
+  '华中湿热': { staple:'米饭', taste:'咸辣', habit:'重油重色' },
+  '西南阴湿': { staple:'米饭', taste:'麻辣、重油', habit:'火锅、辣椒驱寒湿' },
+  '华北干燥': { staple:'面食', taste:'咸香', habit:'面食为主、炖菜' },
+  '东北寒燥': { staple:'米饭+面', taste:'咸、油大', habit:'炖菜、烧烤、腌菜' },
+  '西北干寒': { staple:'面食', taste:'咸、酸辣', habit:'牛羊肉、面食' },
+  '青藏高寒': { staple:'青稞', taste:'咸、奶制品', habit:'酥油茶、牛羊肉' },
+};
+
+// 气候区冲突对 → 水土不服分析
+function getClimateConflict(fromRegion, toRegion) {
+  if (!fromRegion || !toRegion || fromRegion === toRegion) return null;
+
+  const pairs = {};
+  const key = fromRegion + '→' + toRegion;
+
+  // 湿 → 干
+  if (fromRegion.includes('湿') && toRegion.includes('燥')) {
+    return {
+      level: 'high',
+      title: '从"湿"到"燥"——身体的水分要被抽干了',
+      body: `你从小在${fromRegion}长大，身体习惯了潮湿环境。到了${toRegion}，干燥是第一大挑战。皮肤干、喉咙干、容易干咳。但注意——不能一味猛喝水，因为你脾胃底子是"抗湿"模式，突然大量喝水反而加重负担。`,
+      tips: ['少量多次喝水，不要一口气灌', '多吃沙参、玉竹、银耳这类润的东西', '辛辣烧烤要少碰，火上浇油'],
+      dietPriority: ['燥'],
+    };
+  }
+
+  // 燥 → 湿
+  if (fromRegion.includes('燥') && toRegion.includes('湿')) {
+    return {
+      level: 'high',
+      title: '从"干"到"湿"——身体像掉进了蒸笼',
+      body: `你从小在${fromRegion}长大，身体习惯了干燥。到了${toRegion}，湿气是最陌生的敌人。容易困倦、身体沉重、没胃口、大便粘。你的身体还不懂得怎么"抗湿"，所以比本地人更容易被湿气困住。`,
+      tips: ['适当运动出汗是排湿最快的方法', '多吃薏米、茯苓、陈皮这些祛湿食材', '生冷甜腻的东西要少碰，湿上加湿'],
+      dietPriority: ['湿'],
+    };
+  }
+
+  // 寒 → 热/暖
+  if ((fromRegion.includes('寒')) && (toRegion.includes('热') || toRegion.includes('暖'))) {
+    return {
+      level: 'high',
+      title: '从"冷"到"热"——身体像进了火炉',
+      body: `你从小在${fromRegion}长大，身体习惯了寒冷，阳气偏旺。到了${toRegion}，热+可能的湿会让你比本地人更难受——你还没有"散热"的经验。容易上火、长痘、心烦。`,
+      tips: ['慢慢适应，不要一到就狂吹空调吃冰', '绿豆、苦瓜、冬瓜这类清热食材可以多吃', '辣和酒要少碰，火上浇油'],
+      dietPriority: ['热', '暑'],
+    };
+  }
+
+  // 热/暖 → 寒
+  if ((fromRegion.includes('热') || fromRegion.includes('暖')) && toRegion.includes('寒')) {
+    return {
+      level: 'high',
+      title: '从"暖"到"冷"——身体还没准备好过冬',
+      body: `你从小在${fromRegion}长大，身体习惯了温暖。到了${toRegion}，寒冷是你最大的挑战。手脚冰凉、容易感冒、关节不舒服。你的"抗寒基因"还没建立起来，比本地人怕冷得多。`,
+      tips: ['腰腹和脚踝的保暖比穿厚衣服更重要', '生姜、肉桂、当归、羊肉这些温补食材多吃', '晚上热水泡脚是性价比最高的养生法'],
+      dietPriority: ['寒'],
+    };
+  }
+
+  // 湿 → 湿（不同湿）
+  if (fromRegion.includes('湿') && toRegion.includes('湿') && fromRegion !== toRegion) {
+    return {
+      level: 'medium',
+      title: '同样是"湿"，但湿法不一样',
+      body: `你在${fromRegion}习惯了那种湿，但${toRegion}的湿跟你家乡不一样——可能更闷热、或者更阴冷。你以为自己懂"祛湿"，但方向可能偏了。南方的湿偏热，西南的湿偏寒，祛法不同。`,
+      tips: ['观察自己身体的反应，不要照搬老家的方法', '如果是寒湿→温化（生姜、陈皮）；湿热→清化（薏米、冬瓜）'],
+      dietPriority: ['湿'],
+    };
+  }
+
+  // 燥 → 燥（不同燥）
+  if (fromRegion.includes('燥') && toRegion.includes('燥') && fromRegion !== toRegion) {
+    return {
+      level: 'medium',
+      title: '同样是"燥"，冷的燥和热的燥不一样',
+      body: `你在${fromRegion}习惯了干燥，但${toRegion}的燥可能更偏寒或者更偏热。寒燥伤肺更伤肾，热燥主要伤肺和皮肤。润的方法不一样。`,
+      tips: ['观察自己是偏寒还是偏热，再决定用温润还是凉润', '北方燥偏寒→蜂蜜、核桃温润；西北燥偏热→沙参、玉竹凉润'],
+      dietPriority: ['燥'],
+    };
+  }
+
+  return {
+    level: 'low',
+    title: '两地的气候差异不大',
+    body: `${fromRegion}和${toRegion}气候相近，你的身体应该能较快适应。`,
+    tips: ['按当地当季的饮食节奏来就行'],
+    dietPriority: [],
+  };
+}
+
+// 体质 vs 环境冲突
+function getConstitutionEnvConflict(constitution, region) {
+  const conflicts = {
+    '阳虚质': {
+      '华南暖湿': { note:'阳虚怕冷，但环境湿热——外湿内寒，不能一味祛湿，要温阳+祛湿一起', foods:['干姜','肉桂','白术'] },
+      '华东湿热': { note:'同上，湿冷天尤其难受，关节和胃最容易出问题', foods:['干姜','茯苓','桂枝'] },
+      '西南阴湿': { note:'阴湿最伤阳气，你比本地人更容易关节冷痛', foods:['附子','肉桂','杜仲'] },
+      '东北寒燥': { note:'寒+燥双重打击，比别人更怕冷也更干', foods:['当归','黄芪','核桃'] },
+      '西北干寒': { note:'跟东北类似，干寒交加，阳虚的人在这里最难熬', foods:['羊肉','肉桂','生姜'] },
+    },
+    '阴虚质': {
+      '华北干燥': { note:'阴虚+环境干燥——干上加干，比别人更容易口干、皮肤干、便秘', foods:['沙参','玉竹','麦冬'] },
+      '西北干寒': { note:'燥+寒双重打击，但你是阴虚，要润不能温补', foods:['沙参','麦冬','枸杞'] },
+      '东北寒燥': { note:'外寒内燥，不能因为冷就猛吃羊肉——会更燥', foods:['银耳','百合','雪梨'] },
+    },
+    '痰湿质': {
+      '华南暖湿': { note:'痰湿+湿热环境——湿上加湿，比本地人更容易困倦、发胖', foods:['薏米','茯苓','陈皮'] },
+      '华东湿热': { note:'同上，梅雨季是你最难熬的时候', foods:['薏米','冬瓜','藿香'] },
+      '西南阴湿': { note:'阴湿入体最难除，你需要比别人更积极祛湿', foods:['白术','苍术','茯苓'] },
+    },
+    '湿热质': {
+      '华南暖湿': { note:'湿热+湿热——火上浇油，比本地人更容易长痘、口臭、便秘', foods:['绿豆','薏米','苦瓜'] },
+      '华东湿热': { note:'同上，夏天对你来说是双重考验', foods:['荷叶','冬瓜','赤小豆'] },
+    },
+    '气虚质': {
+      '青藏高寒': { note:'气虚+高寒缺氧——气更不够用，容易疲劳气喘', foods:['黄芪','党参','红景天'] },
+      '西南阴湿': { note:'湿气困脾，脾虚气更虚——恶性循环', foods:['黄芪','山药','白术'] },
+    },
+    '血瘀质': {
+      '东北寒燥': { note:'寒凝血瘀——冷会让你的循环更差', foods:['当归','川芎','红花'] },
+      '西北干寒': { note:'同上，寒凝血瘀，冬天尤其难熬', foods:['当归','生姜','桂枝'] },
+      '青藏高寒': { note:'高寒缺氧+血瘀——循环不好的人在这里最难受', foods:['红景天','当归','丹参'] },
+    },
+  };
+
+  const c = conflicts[constitution];
+  if (!c || !c[region]) return null;
+  return c[region];
+}
+
+// 天气偏差 → 调整饮食优先级
+function getWeatherDeviationPriority(weather, wylq) {
+  if (!weather) return { hasDeviation: false, message: '', priorityEvils: [] };
+
+  const keEvil = wylq.currentQi.keInfo.evil;
+  const t = weather.temp;
+  const h = weather.humidity;
+
+  // 严重偏差
+  if (keEvil === '寒' && t > 20) {
+    return { hasDeviation: true, level: 'high',
+      message: `这几天比往年同期暖和不少（${t}°C），该冷的时候不冷——身体容易"上当"。毛孔开了，寒气突然回来就容易感冒。`,
+      priorityEvils: ['风', '热'] };
+  }
+  if (keEvil === '热' && t < 8) {
+    return { hasDeviation: true, level: 'high',
+      message: `这几天比往年同期冷不少（${t}°C），该暖的时候冷——寒热错杂最难将息。既要注意保暖，又不能补过头。`,
+      priorityEvils: ['寒', '风'] };
+  }
+  if (keEvil === '湿' && h < 45) {
+    return { hasDeviation: true, level: 'high',
+      message: `这阵子反常偏干（湿度${h}%），别按常规祛湿了——润燥比祛湿更急。`,
+      priorityEvils: ['燥'] };
+  }
+  if (keEvil === '燥' && h > 80) {
+    return { hasDeviation: true, level: 'high',
+      message: `这阵子反常偏湿（湿度${h}%），燥被湿掩盖了——化湿比润燥更急。`,
+      priorityEvils: ['湿'] };
+  }
+
+  // 轻度偏差
+  if (keEvil === '寒' && t > 12) {
+    return { hasDeviation: true, level: 'low',
+      message: `这几天偏暖（${t}°C），比预期的暖和，注意衣服别穿太多捂出汗。`,
+      priorityEvils: ['风'] };
+  }
+  if (keEvil === '热' && t < 12) {
+    return { hasDeviation: true, level: 'low',
+      message: `这几天偏凉（${t}°C），比预期的冷一些，加件衣服就好。`,
+      priorityEvils: ['寒'] };
+  }
+
+  return { hasDeviation: false, message: '', priorityEvils: [] };
+}
+
+// 综合冲突分析
+function getConflictAnalysis(hometownRegion, currentRegion, constitution, weather, wylq) {
+  const conflicts = [];
+
+  // 1. 水土不服
+  const migrationConflict = getClimateConflict(hometownRegion, currentRegion);
+  if (migrationConflict && migrationConflict.level !== 'low') {
+    conflicts.push({ type: 'migration', ...migrationConflict });
+  }
+
+  // 2. 体质 vs 环境
+  const constConflict = getConstitutionEnvConflict(constitution, currentRegion);
+  if (constConflict) {
+    conflicts.push({ type: 'constitution_env', level: 'medium', ...constConflict });
+  }
+
+  // 3. 天气偏差
+  if (weather) {
+    const dev = getWeatherDeviationPriority(weather, wylq);
+    if (dev.hasDeviation) {
+      conflicts.push({ type: 'weather_deviation', ...dev });
+    }
+  }
+
+  // 综合优先级
+  const priorityEvils = [];
+  conflicts.forEach(c => {
+    if (c.priorityEvils) priorityEvils.push(...c.priorityEvils);
+    if (c.dietPriority) priorityEvils.push(...c.dietPriority);
+  });
+  const uniqueEvils = [...new Set(priorityEvils)];
+
+  // 气候饮食文化差异
+  const homeFood = REGION_FOOD_CULTURE[hometownRegion];
+  const currFood = REGION_FOOD_CULTURE[currentRegion];
+
+  return {
+    conflicts,
+    priorityEvils: uniqueEvils,
+    hasConflict: conflicts.length > 0,
+    homeFood,
+    currFood,
+    foodClash: (homeFood && currFood && homeFood.taste !== currFood.taste) ? {
+      home: homeFood,
+      current: currFood,
+      note: `你从小吃${homeFood.taste}（${homeFood.habit}），现在身在${currFood.taste}的地方——吃老家的习惯不合适，完全照搬当地也可能不适应。`,
+    } : null,
   };
 }

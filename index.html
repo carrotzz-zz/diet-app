@@ -10,46 +10,24 @@
   <div class="container">
     <h1>四季药膳小助手</h1>
 
-    <!-- 大白话提醒卡片 -->
-    <div class="panel health-card" id="healthCard">
-      <div class="card-top">
-        <span class="card-emoji" id="cardEmoji">🌿</span>
-        <div class="card-head">
-          <div class="card-headline" id="cardHeadline">加载中…</div>
-          <div class="card-sub" id="cardSub"></div>
-        </div>
-      </div>
-      <div class="card-section">
-        <div class="section-label">你可能感觉</div>
-        <div class="signal-list" id="bodySignals"></div>
-      </div>
-      <div class="card-section">
-        <div class="section-label">建议这样做</div>
-        <div class="do-list" id="doList"></div>
-      </div>
-      <div class="card-section row-split">
-        <div>
-          <div class="section-label eat">可以多吃</div>
-          <div class="tag-list" id="eatList"></div>
-        </div>
-        <div>
-          <div class="section-label avoid">尽量少碰</div>
-          <div class="tag-list" id="avoidList"></div>
-        </div>
-      </div>
+    <!-- 冲突分析卡片 —— 首页主角 -->
+    <div class="panel conflict-card" id="conflictCard" style="display:none;">
+      <div class="conflict-hero" id="conflictHero"></div>
+      <div class="conflict-list" id="conflictList"></div>
+      <div class="conflict-foot" id="conflictFoot"></div>
       <details class="why-details">
-        <summary>为什么？<span class="summary-hint">（点击看原理）</span></summary>
+        <summary>了解背后的原理<span class="summary-hint">（五运六气 + 气候分析）</span></summary>
         <div class="why-content" id="whyContent"></div>
       </details>
     </div>
 
-    <!-- 天气小卡 -->
-    <div class="panel weather-mini" id="weatherMini" style="display:none;">
-      <div class="weather-mini-top">
-        <span id="weatherIcon" class="w-icon">🌤</span>
-        <span id="weatherSummary" class="w-text"></span>
+    <!-- 未选城市时的占位 -->
+    <div class="panel placeholder-card" id="placeholderCard">
+      <div class="placeholder-icon">🌍</div>
+      <div class="placeholder-text">
+        <strong>选好家乡和现居城市</strong>后，这里会显示你的身体与环境之间的"冲突点"
       </div>
-      <div id="weatherDeviation" class="w-deviation"></div>
+      <div class="placeholder-hint">越是不匹配，越需要调整饮食</div>
     </div>
 
     <div id="quizSection">
@@ -57,11 +35,25 @@
       <p class="tip">请根据近半年的感受打分（1=完全没有，5=非常明显）</p>
       <div id="questions"></div>
 
-      <h2>② 常驻城市</h2>
-      <select id="citySelect">
-        <option value="">-- 请选择城市 --</option>
-      </select>
-      <div id="climateNote" class="climate-note"></div>
+      <h2>② 你从哪里来，现在在哪里</h2>
+      <div class="dual-city">
+        <div class="city-box">
+          <label class="city-label">🏠 家乡（从小生活的地方）</label>
+          <select id="hometownSelect">
+            <option value="">-- 请选择 --</option>
+          </select>
+          <p class="city-food-hint" id="hometownFood"></p>
+        </div>
+        <div class="city-arrow">→</div>
+        <div class="city-box">
+          <label class="city-label">📍 现居城市</label>
+          <select id="citySelect">
+            <option value="">-- 请选择 --</option>
+          </select>
+          <p class="city-food-hint" id="currentFood"></p>
+        </div>
+      </div>
+      <div id="migrationNote" class="migration-note"></div>
 
       <h2>③ 饮食偏好（可多选）</h2>
       <div id="preferences">
@@ -76,12 +68,12 @@
     </div>
 
     <div id="resultSection" style="display: none;">
-      <h2>📋 您的体质</h2>
+      <h2>📋 你的体质</h2>
       <p id="constitutionResult" class="highlight"></p>
 
-      <!-- 结果页的运气指导 -->
+      <!-- 结果页冲突分析 -->
       <div class="panel guide-panel" id="guidePanel">
-        <div class="guide-headline" id="guideHeadline"></div>
+        <div class="guide-headline">🎯 为什么推荐这些</div>
         <div class="guide-body" id="guideBody"></div>
       </div>
 
@@ -93,7 +85,7 @@
 
     <footer class="disclaimer">
       ⚠️ 本工具仅为中医食疗养生参考，不构成医疗诊断。因个人体质差异，食用前请咨询专业医师。<br>
-      天气数据来源：Open-Meteo（免费开放API）· 五运六气依据《黄帝内经》运气七篇推算
+      天气数据：Open-Meteo · 五运六气依据《黄帝内经》运气七篇
     </footer>
   </div>
 
