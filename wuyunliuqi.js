@@ -643,3 +643,133 @@ function getConflictAnalysis(hometownRegion, currentRegion, constitution, weathe
     } : null,
   };
 }
+
+// ========== 14天天气剧变检测 ==========
+function detectClimateAlerts(daily) {
+  if (!daily || !daily.time || daily.time.length < 2) return [];
+  const alerts = [];
+  const days = daily.time;
+  const tMax = daily.temperature_2m_max;
+  const tMin = daily.temperature_2m_min;
+  const precip = daily.precipitation_sum;
+
+  for (let i = 1; i < days.length; i++) {
+    const prevMax = tMax[i-1], currMax = tMax[i];
+    const prevMin = tMin[i-1], currMin = tMin[i];
+    const drop24h = prevMax - currMax;
+    const rise24h = currMax - prevMax;
+
+    // 寒潮：24h降温≥8°C
+    if (drop24h >= 8) {
+      alerts.push({ date: days[i], type:'寒潮降温', evil:'寒',
+        msg: `${days[i].slice(5)} 最高温骤降 ${drop24h.toFixed(0)}°C（${currMax.toFixed(0)}°C），寒邪来袭`,
+        priority: 'high' });
+    }
+    // 热浪：24h升温≥8°C
+    else if (rise24h >= 8) {
+      alerts.push({ date: days[i], type:'热浪升温', evil:'热',
+        msg: `${days[i].slice(5)} 最高温骤升 ${rise24h.toFixed(0)}°C（${currMax.toFixed(0)}°C），暑热突袭`,
+        priority: 'high' });
+    }
+    // 持续高温：连续3天≥35°C
+    if (i >= 2 && currMax >= 35 && tMax[i-1] >= 35 && tMax[i-2] >= 35 && !alerts.find(a=>a.date===days[i]&&a.type==='持续高温')) {
+      alerts.push({ date: days[i], type:'持续高温', evil:'暑',
+        msg: `${days[i-2].slice(5)}起连续高温 ≥35°C，注意防暑`,
+        priority: 'high' });
+    }
+    // 持续阴雨：连续3天有降水
+    if (i >= 2 && precip[i] > 0 && precip[i-1] > 0 && precip[i-2] > 0 && !alerts.find(a=>a.date===days[i]&&a.type==='持续阴雨')) {
+      const totalRain = (precip[i-2]+precip[i-1]+precip[i]).toFixed(0);
+      alerts.push({ date: days[i], type:'持续阴雨', evil:'湿',
+        msg: `${days[i-2].slice(5)}起连续3天有雨（累计${totalRain}mm），湿气加重`,
+        priority: 'medium' });
+    }
+  }
+
+  // 48h湿度骤变（需要 humidity 数据，用降水+温差做 proxy：大幅温差往往伴随干湿变化）
+  // 用连续两天的温差变化幅度近似
+  for (let i = 2; i < days.length; i++) {
+    const range1 = tMax[i-2] - tMin[i-2];
+    const range2 = tMax[i] - tMin[i];
+    if (Math.abs(range2 - range1) >= 10 && !alerts.find(a=>a.date===days[i]&&a.type==='温差异常')) {
+      alerts.push({ date: days[i], type:'温差异常', evil:'风',
+        msg: `${days[i].slice(5)} 昼夜温差剧烈变化，易受风邪，注意衣物增减`,
+        priority: 'medium' });
+    }
+  }
+
+  // 只取未来7天内的预警，去重
+  return alerts.filter((a, i) => i < 10);
+}
+
+// ========== 跨文化饮食推荐：家乡食物 × 现居地气候 ==========
+const CROSS_CULTURE_FOODS = {
+  // [家乡饮食特征] → { [目标气候挑战]: { principle, foods } }
+  '清淡、喜煲汤、喜海鲜': {
+    '燥': { principle:'你的家乡煲汤习惯是润燥利器——在干燥环境里继续煲起来，但汤料要从祛湿型换成滋润型', foods:['沙参玉竹汤（替代土茯苓汤）','银耳莲子羹','花胶炖奶','生滚鱼片粥','白灼海鲜（清润不燥）'] },
+    '寒': { principle:'海鲜偏寒但煲汤可以温补——用姜和胡椒平衡海鲜的寒性', foods:['胡椒猪肚鸡','姜葱炒蟹','当归生姜鱼汤','花雕蛋白蒸蟹','沙姜白切鸡'] },
+    '湿': { principle:'你的清淡口味正好适合祛湿——少油少盐是祛湿的基础，继续保持', foods:['薏米冬瓜煲汤','清蒸鱼','白切鸡蘸沙姜','四神汤','陈皮蒸排骨'] },
+  },
+  '咸鲜、偏甜': {
+    '燥': { principle:'红烧偏油，在干燥环境可以保留但减油增润——多用蒸和炖', foods:['清炖狮子头','冰糖炖雪梨','桂花糯米藕','酒酿圆子','莼菜鱼羹'] },
+    '寒': { principle:'江南的甜可以中和温补药的燥——红枣桂圆入菜是天然搭配', foods:['红烧羊肉（加萝卜）','姜丝炒米粥','东坡肉（加黄芪）','老姜鸭汤','红糖糍粑'] },
+    '湿': { principle:'甜腻助湿，在湿气重的环境要暂时减糖——咸鲜口味可以保留', foods:['盐水鸭','清蒸鲈鱼','雪菜肉丝面','榨菜蛋花汤','葱油拌面（少油版）'] },
+  },
+  '咸辣': {
+    '燥': { principle:'辣在干燥环境是大忌——但家乡的腊味和腌菜（不过辣）可以保留', foods:['莲藕排骨汤（不加辣）','粉蒸肉','蛋酒','葛粉糊','清炒红菜苔'] },
+    '寒': { principle:'你的辣正好可以用来驱寒！但要控制在"微辣出汗"的程度', foods:['胡辣汤（少辣多胡椒）','姜辣鸭','老姜肉片汤','羊肉锅（微辣版）','剁椒蒸鱼（少剁椒）'] },
+    '湿': { principle:'辣能祛湿，但你家乡的重油做法在湿热环境要调整——减油不减辣', foods:['剁椒鱼头（少油版）','老姜炒肉','紫苏黄瓜','酸豆角肉末','擂辣椒皮蛋'] },
+  },
+  '麻辣、重油': {
+    '燥': { principle:'麻辣在干燥环境等于火上浇油——但泡菜、酸汤、水煮（清汤）是宝藏', foods:['酸萝卜老鸭汤','酸汤鱼（贵州清汤版）','四川泡菜','滑肉汤（清汤）','红糖冰粉（不加辣）'] },
+    '寒': { principle:'你的麻辣正好驱寒！但重油要减——改成"麻辣轻油"模式', foods:['麻辣火锅（减油版锅底）','姜汁热窝鸡','水煮牛肉（少油）','酸菜鱼（清汤）','夫妻肺片（少红油）'] },
+    '湿': { principle:'麻辣祛湿是最强武器之一，但油大助湿——减油保持麻辣', foods:['酸菜鱼（少油版）','毛血旺（清汤版）','泡椒凤爪','折耳根拌菜','麻辣香锅（少油多菜）'] },
+  },
+  '咸香': {
+    '燥': { principle:'面食炖菜在干燥环境需要加点"润"——多喝汤、面配汤', foods:['羊肉泡馍（多加汤）','清炖狮子头','刀削面（配骨汤）','莜面栲栳栳（蒸制）','山药小米粥'] },
+    '寒': { principle:'你的面食+炖菜是天生的抗寒组合，保持！多放姜和葱', foods:['牛肉面（重姜葱版）','羊肉烩面','酸汤水饺','葱花饼配羊汤','大烩菜（加胡椒）'] },
+    '湿': { principle:'面食在湿气环境偏滞——可以混入杂粮，炖菜多放祛湿料', foods:['荞面饸饹','杂粮煎饼','莜面鱼鱼','山药茯苓糕','陈皮炖牛肉'] },
+  },
+  '咸、油大': {
+    '燥': { principle:'油大在干燥环境加重燥热——但炖菜和腌菜的"咸"可以生津', foods:['酸菜炖大骨（少油）','小鸡炖蘑菇（去鸡皮）','地三鲜（少油版）','大拉皮（麻酱版）','玉米碴子粥'] },
+    '寒': { principle:'你的炖菜基因就是为寒冷而生的！保持重炖，加温补料', foods:['猪肉炖粉条（加肉桂）','铁锅炖大鹅','酸菜白肉锅','酱骨架（加当归）','韭菜盒子'] },
+    '湿': { principle:'东北菜在湿气环境偏"滞"——多做炖菜少做烧烤，多放祛湿香料', foods:['小鸡炖蘑菇（加薏米）','鲫鱼炖豆腐','排骨炖豆角（加白胡椒）','大丰收（蘸酱菜）','疙瘩汤'] },
+  },
+  '咸、酸辣': {
+    '燥': { principle:'酸辣在干燥环境伤阴——但新疆的奶制品和干果是润燥宝库', foods:['羊肉抓饭（少油多胡萝卜）','酸奶配核桃','大盘鸡（去辣留香）','馕配奶茶','巴旦木杏仁露'] },
+    '寒': { principle:'牛羊肉+面食是天选抗寒组合，酸辣调味恰到好处', foods:['羊肉泡馍（西北版）','牛肉面（清汤重料）','手抓羊肉（配蒜）','胡辣羊蹄','馕坑烤肉'] },
+    '湿': { principle:'酸辣能开胃祛湿，但面食偏滞——多喝汤、多吃烤肉（去湿）', foods:['羊肉串（孜然祛湿）','酸汤面片','大盘鸡（多放花椒）','拌面（少面多菜）','酸奶（促消化）'] },
+  },
+  '咸、奶制品': {
+    '燥': { principle:'奶制品和酥油是天生的润燥品，在你的高原饮食里继续保留', foods:['酥油茶','牦牛奶茶','糌粑酥油粥','酸奶拌青稞','酥油蜂蜜拌燕麦'] },
+    '寒': { principle:'酥油+牛羊肉是最强抗寒组合，青稞提供持久能量', foods:['酥油茶（多加酥油）','牦牛肉炖萝卜','糌粑（加酥油红糖）','羊肉青稞粥','酥油煎饼'] },
+    '湿': { principle:'奶制品偏滋腻，在湿气环境要减量——青稞可以保留', foods:['青稞粥（少酥油）','牦牛肉干（风干去湿）','清茶（少奶）','青稞饼','风干肉配茶'] },
+  },
+};
+
+function getCrossCultureFoods(homeRegion, currRegion) {
+  if (!homeRegion || !currRegion || homeRegion === currRegion) return null;
+  const homeCulture = REGION_FOOD_CULTURE[homeRegion];
+  if (!homeCulture) return null;
+
+  // 找到匹配的饮食特征
+  const tasteKey = Object.keys(CROSS_CULTURE_FOODS).find(k => homeCulture.taste.includes(k) || k.includes(homeCulture.taste.slice(0,2)));
+  const cultureData = CROSS_CULTURE_FOODS[tasteKey] || CROSS_CULTURE_FOODS['咸香']; // fallback
+
+  // 判断目标气候的主要挑战
+  let challenge = '湿'; // default
+  if (currRegion.includes('燥')) challenge = '燥';
+  else if (currRegion.includes('寒') && !currRegion.includes('湿')) challenge = '寒';
+  else if (currRegion.includes('湿')) challenge = '湿';
+  else if (currRegion.includes('热') || currRegion.includes('暖')) challenge = '湿'; // 湿热为主
+
+  const advice = cultureData[challenge] || Object.values(cultureData)[0];
+  return {
+    homeTaste: homeCulture.taste,
+    homeHabit: homeCulture.habit,
+    currRegion,
+    challenge,
+    principle: advice.principle,
+    foods: advice.foods,
+  };
+}

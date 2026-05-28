@@ -248,7 +248,7 @@ async function fetchWeather(lat, lon) {
   const key = `${lat.toFixed(1)},${lon.toFixed(1)}`;
   if (weatherCache[key] && (Date.now() - weatherCache[key].ts) < 30*60*1000) return weatherCache[key].data;
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FShanghai&forecast_days=5`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FShanghai&forecast_days=16`;
     const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!r.ok) throw new Error("API err");
     const j = await r.json();
@@ -487,6 +487,29 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   document.getElementById("mainSection").style.display = "none";
   document.getElementById("resultSection").style.display = "block";
 
+  // ===== 天气预警（14天剧变检测 + 自动匹配药膳） =====
+  let weatherAlerts = [], weatherAlertDiets = [];
+  if (currentWeather && currentWeather.daily) {
+    weatherAlerts = detectClimateAlerts(currentWeather.daily);
+    if (weatherAlerts.length > 0) {
+      // 为每个预警匹配药膳
+      const alertEvils = [...new Set(weatherAlerts.map(a => a.evil))];
+      weatherAlertDiets = diets.filter(d => {
+        if (!d.qiEvil || d.qiEvil.length === 0) return false;
+        return alertEvils.some(e => d.qiEvil.includes(e)) && d.season.includes(currentSeason);
+      });
+      // 按覆盖的邪气种类数排序
+      weatherAlertDiets.forEach(d => {
+        d._alertScore = d.qiEvil.filter(e => alertEvils.includes(e)).length;
+      });
+      weatherAlertDiets.sort((a, b) => b._alertScore - a._alertScore);
+      weatherAlertDiets = weatherAlertDiets.slice(0, 6);
+    }
+  }
+
+  // ===== 跨文化饮食推荐 =====
+  const crossCulture = getCrossCultureFoods(hRegion, cRegion);
+
   // 体质画像
   if (con.isBalanced) {
     document.getElementById("constitutionResult").innerHTML = `
@@ -514,6 +537,14 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   const g = getPlainGuidance(wylq, currentWeather, cInfo);
   let guideHtml = '';
 
+  // 天气预警（优先显示）
+  if (weatherAlerts.length > 0) {
+    guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>🌡 未来天气剧变预警</strong><p>${weatherAlerts.map(a=>a.msg).join('<br>')}</p></div></div>`;
+    if (weatherAlertDiets.length > 0) {
+      guideHtml += `<div class="reason-item"><span class="reason-icon">🍲</span><div><strong>应对天气变化的推荐药膳</strong><p>${weatherAlertDiets.slice(0,4).map(d=>d.name).join('、')}</p></div></div>`;
+    }
+  }
+
   if (a.weatherDeviation && a.weatherDeviation.hasDeviation && a.weatherDeviation.level === 'high') {
     guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>天气反常——优先级最高</strong><p>${a.weatherDeviation.message}</p></div></div>`;
   }
@@ -525,6 +556,14 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   }
   if (a.foodClash) {
     guideHtml += `<div class="reason-item"><span class="reason-icon">🍽</span><div><strong>饮食习惯冲突</strong><p>${a.foodClash.note}</p></div></div>`;
+    // 跨文化饮食推荐
+    if (crossCulture) {
+      guideHtml += `<div class="reason-item"><span class="reason-icon">🏠</span><div><strong>家乡胃 × 新水土：${crossCulture.principle}</strong><p>推荐：${crossCulture.foods.join('、')}</p></div></div>`;
+    }
+  }
+  if (!a.foodClash && crossCulture) {
+    // 即使没有明显冲突，也提供家乡饮食适应建议
+    guideHtml += `<div class="reason-item"><span class="reason-icon">🏠</span><div><strong>家乡味道，适应当地：${crossCulture.principle}</strong><p>推荐：${crossCulture.foods.join('、')}</p></div></div>`;
   }
   if (prefWarnings.length > 0) {
     prefWarnings.forEach(w => {
@@ -545,12 +584,13 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     const wCode = w.weatherCode;
     const wDesc = wCode === 0 ? "☀️ 晴" : wCode <= 3 ? "⛅ 多云" : wCode <= 48 ? "🌫 雾/霾" : wCode <= 67 ? "🌧 雨" : wCode <= 77 ? "❄️ 雪" : wCode <= 82 ? "🌧 阵雨" : "⛈ 雷雨";
     const daily = w.daily;
-    const forecastDays = daily ? daily.time.slice(1, 4).map((t, i) => {
+    const forecastDays = daily ? daily.time.slice(1).map((t, i) => {
+      if (i >= 7) return ''; // only show next 7 in compact view
       return `${t.slice(5)} ${daily.temperature_2m_max[i+1]?.toFixed(0)||'?'}/${daily.temperature_2m_min[i+1]?.toFixed(0)||'?'}°C`;
-    }).join(' · ') : '';
+    }).filter(Boolean).join(' · ') : '';
     weatherContextHtml = `
     <div class="cg-item"><span class="cg-label">🌡 当前天气</span><span class="cg-val">${wDesc} ${w.temp}°C（体感${w.feelsLike}°C）· 湿度${w.humidity}%</span></div>
-    <div class="cg-item"><span class="cg-label">📅 未来三天</span><span class="cg-val">${forecastDays || '暂无'}</span></div>`;
+    <div class="cg-item"><span class="cg-label">📅 未来七日</span><span class="cg-val">${forecastDays || '暂无'}</span></div>`;
   }
   document.getElementById("contextHead").innerHTML = `${e} 当前运气 · ${qi.dateRange}`;
   document.getElementById("contextBody").innerHTML = `
