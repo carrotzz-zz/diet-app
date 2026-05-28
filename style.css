@@ -8,7 +8,7 @@ body {
   background: #f5f0e8;
   font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
   color: #3e2e1f;
-  padding: 20px;
+  padding: 16px;
 }
 
 .container {
@@ -18,31 +18,239 @@ body {
 
 h1 {
   text-align: center;
-  font-size: 28px;
-  margin-bottom: 5px;
+  font-size: 26px;
+  margin-bottom: 4px;
   color: #5a3e2b;
 }
 
 .subtitle {
   text-align: center;
   color: #7a6a5a;
-  margin-bottom: 25px;
+  margin-bottom: 16px;
+  font-size: 14px;
 }
 
 h2 {
-  font-size: 20px;
-  margin: 20px 0 10px;
+  font-size: 19px;
+  margin: 18px 0 10px;
   color: #5a3e2b;
   border-bottom: 2px solid #d4b68a;
   padding-bottom: 5px;
 }
 
 .tip {
-  font-size: 14px;
+  font-size: 13px;
   color: #888;
   margin-bottom: 10px;
 }
 
+.muted { color: #999; font-size: 14px; text-align: center; padding: 10px 0; }
+
+/* ========== 通用面板 ========== */
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.panel-header {
+  font-weight: bold;
+  font-size: 15px;
+  color: #5a3e2b;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-icon { font-size: 18px; }
+
+/* ========== 五运六气面板 ========== */
+.wylq-panel {
+  border-left: 4px solid #8b5a2b;
+}
+
+.wylq-year {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.wylq-year strong {
+  font-size: 18px;
+  color: #5a3e2b;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.tag-yun { background: #fff3e0; color: #e65100; }
+.tag-sitian { background: #fce4ec; color: #c62828; }
+.tag-zaiquan { background: #e8eaf6; color: #283593; }
+
+.wylq-current {
+  background: #faf7f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.qi-line {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.qi-line strong { color: #5a3e2b; }
+.qi-date { color: #999; font-size: 12px; }
+
+.qi-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.qi-item {
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.qi-item.zhu { background: #f3faf7; }
+.qi-item.ke { background: #fef7e6; }
+.qi-label { font-size: 11px; color: #999; display: block; margin-bottom: 2px; }
+.qi-val { font-weight: bold; color: #5a3e2b; display: block; margin-bottom: 2px; }
+.qi-desc { font-size: 11px; color: #888; line-height: 1.4; }
+
+.qi-tip {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #c03a2b;
+  line-height: 1.4;
+}
+
+.all-qi-details {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #7a6a5a;
+  cursor: pointer;
+}
+.all-qi-details summary {
+  padding: 6px 0;
+  font-weight: bold;
+}
+.all-qi-table {
+  margin-top: 6px;
+}
+.qi-row {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr 1fr;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-bottom: 1px solid #f0ece4;
+  gap: 4px;
+}
+.qi-row.active {
+  background: #fef7e6;
+  font-weight: bold;
+  border-radius: 4px;
+}
+.qi-row-date { color: #999; }
+.qi-row-qi { text-align: right; color: #7a6a5a; }
+
+/* ========== 天气面板 ========== */
+.weather-panel {
+  border-left: 4px solid #4a90d9;
+}
+
+.weather-now {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.weather-icon { font-size: 28px; }
+.weather-temp { font-size: 28px; font-weight: bold; color: #333; }
+.weather-feels { font-size: 13px; color: #999; }
+.weather-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+.weather-forecast {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+.weather-forecast strong {
+  font-size: 13px;
+  color: #5a3e2b;
+  display: block;
+  margin-bottom: 6px;
+}
+.forecast-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+.forecast-day {
+  flex: 1;
+  min-width: 55px;
+  text-align: center;
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 6px 4px;
+  font-size: 12px;
+}
+.fd-date { color: #999; margin-bottom: 2px; }
+.fd-temp { font-weight: bold; color: #333; }
+.fd-rain { color: #4a90d9; font-size: 11px; }
+
+.weather-analysis {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 13px;
+}
+.weather-analysis strong {
+  color: #5a3e2b;
+  display: block;
+  margin-bottom: 6px;
+}
+.evil-tag {
+  display: inline-block;
+  background: #c03a2b;
+  color: white;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 13px;
+}
+.alert-item {
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: #fff9f0;
+  border-radius: 4px;
+  color: #8b5a2b;
+  line-height: 1.5;
+}
+.food-hint {
+  margin-top: 6px;
+  color: #5a8a3c;
+  font-size: 12px;
+}
+
+/* ========== 问卷区 ========== */
 .question-item {
   background: #fff;
   border-radius: 10px;
@@ -80,6 +288,7 @@ select {
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 16px;
+  background: white;
 }
 
 .info {
@@ -87,11 +296,24 @@ select {
   color: #7a6a5a;
   margin-top: 5px;
 }
+.wylq-note {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.note-tag {
+  display: inline-block;
+  background: #eee;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  margin-right: 4px;
+}
 
 #preferences label {
   display: inline-block;
   background: #fff;
-  padding: 6px 14px;
+  padding: 6px 12px;
   margin: 4px;
   border-radius: 20px;
   font-size: 14px;
@@ -112,38 +334,85 @@ select {
   border: none;
   border-radius: 30px;
   font-size: 18px;
-  margin: 25px 0 15px;
+  margin: 20px 0 12px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.btn:hover {
-  background: #6b4220;
-}
+.btn:hover { background: #6b4220; }
 
 .secondary {
   background: #aaa;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .highlight {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: bold;
   color: #c03a2b;
-  margin: 10px 0;
+  margin: 8px 0;
 }
 
+/* ========== 分析面板 ========== */
+.analysis-panel {
+  border-left: 4px solid #c03a2b;
+  margin: 14px 0;
+}
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.analysis-item {
+  background: #fafaf7;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.analysis-item strong {
+  display: block;
+  color: #5a3e2b;
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+.analysis-item p {
+  color: #666;
+  line-height: 1.4;
+}
+.analysis-recs {
+  font-size: 13px;
+  line-height: 1.6;
+  padding-top: 8px;
+  border-top: 1px solid #f0ece4;
+}
+.analysis-recs p { margin-bottom: 2px; }
+
+/* ========== 药膳卡片 ========== */
 .diet-card {
   background: white;
   border-radius: 12px;
   padding: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 14px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  position: relative;
 }
 
 .diet-card h3 {
   color: #5a3e2b;
   margin-bottom: 8px;
+}
+
+.qi-badge {
+  display: inline-block;
+  background: #fff3e0;
+  color: #e65100;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 .diet-card p {
@@ -155,17 +424,20 @@ select {
 .risk {
   color: #c03a2b;
   background: #fff3f0;
-  padding: 8px;
+  padding: 8px 10px;
   border-radius: 6px;
   font-size: 13px;
   margin-top: 8px;
+  line-height: 1.5;
 }
 
+/* ========== 底部 ========== */
 .disclaimer {
-  margin-top: 30px;
+  margin-top: 24px;
   font-size: 12px;
   color: #999;
   text-align: center;
   border-top: 1px solid #e0d6c8;
   padding-top: 10px;
+  line-height: 1.6;
 }

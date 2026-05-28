@@ -8,8 +8,28 @@
 </head>
 <body>
   <div class="container">
-    <h1>🌿 四季药膳小助手</h1>
+    <h1>四季药膳小助手</h1>
     <p class="subtitle" id="seasonHint"></p>
+
+    <!-- 五运六气面板 -->
+    <div class="panel wylq-panel" id="wylqPanel">
+      <div class="panel-header">
+        <span class="panel-icon">☯</span>
+        <span>五运六气 · 当前格局</span>
+      </div>
+      <div class="wylq-content" id="wylqContent">加载中…</div>
+    </div>
+
+    <!-- 天气面板 -->
+    <div class="panel weather-panel" id="weatherPanel" style="display:none;">
+      <div class="panel-header">
+        <span class="panel-icon">🌤</span>
+        <span>实时天气对照</span>
+      </div>
+      <div class="weather-content" id="weatherContent">
+        <p class="muted">请先选择常驻城市，查看天气与运气对照</p>
+      </div>
+    </div>
 
     <div id="quizSection">
       <h2>① 体质快速测评</h2>
@@ -21,6 +41,7 @@
         <option value="">-- 请选择城市 --</option>
       </select>
       <p id="regionResult" class="info"></p>
+      <div id="cityWylqNote" class="info wylq-note"></div>
 
       <h2>③ 饮食偏好（可多选）</h2>
       <div id="preferences">
@@ -40,6 +61,15 @@
       <p id="regionDisplay"></p>
       <p id="seasonDisplay"></p>
 
+      <!-- 运气分析结果 -->
+      <div class="panel analysis-panel" id="analysisPanel">
+        <div class="panel-header">
+          <span class="panel-icon">🔍</span>
+          <span>运气+天气综合分析</span>
+        </div>
+        <div id="analysisContent"></div>
+      </div>
+
       <h2>🍲 推荐药膳</h2>
       <div id="dietCards"></div>
 
@@ -47,10 +77,12 @@
     </div>
 
     <footer class="disclaimer">
-      ⚠️ 本工具仅为中医食疗养生参考，不构成医疗诊断。因个人体质差异，食用前请咨询专业医师。
+      ⚠️ 本工具仅为中医食疗养生参考，不构成医疗诊断。因个人体质差异，食用前请咨询专业医师。<br>
+      天气数据来源：Open-Meteo（免费开放API）
     </footer>
   </div>
 
+  <script src="wuyunliuqi.js"></script>
   <script src="data.js"></script>
   <script src="script.js"></script>
 </body>
