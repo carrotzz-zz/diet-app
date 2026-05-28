@@ -533,6 +533,22 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     }
   }
 
+  // ===== 游子身份条 =====
+  const hf = REGION_FOOD_CULTURE[hRegion];
+  const cf = REGION_FOOD_CULTURE[cRegion];
+  const isSameCity = hCity === cCity;
+  const isSameRegion = hRegion === cRegion;
+  let bannerHTML = '';
+  if (isSameCity) {
+    bannerHTML = `<div class="migrant-banner same"><div class="mb-route">🏠📍 <strong>${hCity}</strong></div><div class="mb-note">此心安处是吾乡</div></div>`;
+  } else {
+    const diffNote = isSameRegion
+      ? `同属${hRegion.split(/[东西南北中]/)[0]}，气候相近`
+      : `${hf ? hf.taste : ''}的胃 → ${cf ? cf.taste : ''}的水土`;
+    bannerHTML = `<div class="migrant-banner"><div class="mb-route">🏠 <strong>${hCity}</strong> &nbsp;→&nbsp; 📍 <strong>${cCity}</strong></div><div class="mb-note">${diffNote}</div></div>`;
+  }
+  document.getElementById("migrantBanner").innerHTML = bannerHTML;
+
   // ===== 跨文化饮食推荐 =====
   const crossCulture = getCrossCultureFoods(hRegion, cRegion);
 
