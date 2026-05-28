@@ -45,6 +45,10 @@ h2 {
   padding:3px 8px; border-radius:10px; font-size:12px;
 }
 .ma-ok { font-size:13px; color:#5a9e6f; }
+.ma-weather {
+  font-size:13px; color:#5a3e2b; background:#e8f5e9;
+  padding:6px 10px; border-radius:8px; margin-bottom:8px; line-height:1.5;
+}
 
 /* ===== 体质测评 ===== */
 .const-group { margin-bottom:8px; }

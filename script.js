@@ -281,25 +281,42 @@ async function onCityChange() {
     cTag.innerHTML = `当地特点：<strong>${cf ? cf.taste : ''} · ${getClimatePlain(cInfo.region).split('，')[0]}</strong>`;
   } else { cTag.style.display = "none"; }
 
-  // 水土差异分析
+  // 水土差异分析 + 天气显示
   const analysisDiv = document.getElementById("migrationAnalysis");
   if (!cInfo) { analysisDiv.style.display = "none"; return; }
 
   currentWeather = await fetchWeather(cInfo.lat, cInfo.lon);
+
+  // 天气状态行
+  let weatherLine = "";
+  if (currentWeather) {
+    const wCode = currentWeather.weatherCode;
+    const wDesc = wCode === 0 ? "☀️ 晴" : wCode <= 3 ? "⛅ 多云" : wCode <= 48 ? "🌫 雾/霾" : wCode <= 67 ? "🌧 雨" : wCode <= 77 ? "❄️ 雪" : wCode <= 82 ? "🌧 阵雨" : "⛈ 雷雨";
+    weatherLine = `<div class="ma-weather">${wDesc} · 🌡 ${currentWeather.temp}°C（体感${currentWeather.feelsLike}°C）· 💧 湿度${currentWeather.humidity}% · 🌬 风速${currentWeather.windSpeed}km/h</div>`;
+  } else {
+    weatherLine = `<div class="ma-weather" style="color:#c03a2b;">⚠️ 天气数据获取失败，请检查网络</div>`;
+  }
 
   if (hInfo && hInfo.region !== cInfo.region) {
     const conflict = getClimateConflict(hInfo.region, cInfo.region);
     if (conflict && conflict.level !== 'low') {
       analysisDiv.style.display = "block";
       analysisDiv.innerHTML = `
+        ${weatherLine}
         <div class="ma-head">🚨 ${conflict.title}</div>
         <p class="ma-body">${conflict.body}</p>
         <div class="ma-tips">${conflict.tips.map(t => `<span class="ma-tip">${t}</span>`).join('')}</div>`;
-    } else { analysisDiv.style.display = "none"; }
+    } else {
+      analysisDiv.style.display = "block";
+      analysisDiv.innerHTML = weatherLine;
+    }
   } else if (hInfo && hInfo.region === cInfo.region) {
     analysisDiv.style.display = "block";
-    analysisDiv.innerHTML = `<div class="ma-ok">✅ 家乡和现居地气候相近，水土适应的压力不大。</div>`;
-  } else { analysisDiv.style.display = "none"; }
+    analysisDiv.innerHTML = `${weatherLine}<div class="ma-ok">✅ 家乡和现居地气候相近，水土适应的压力不大。</div>`;
+  } else {
+    analysisDiv.style.display = "block";
+    analysisDiv.innerHTML = weatherLine;
+  }
 }
 
 hometownCitySelect.addEventListener("change", onCityChange);
@@ -522,10 +539,24 @@ document.getElementById("submitBtn").addEventListener("click", function() {
 
   // 运气背景
   const e = emojiMap[qi.keInfo.evil] || '🌿';
+  let weatherContextHtml = '';
+  if (currentWeather) {
+    const w = currentWeather;
+    const wCode = w.weatherCode;
+    const wDesc = wCode === 0 ? "☀️ 晴" : wCode <= 3 ? "⛅ 多云" : wCode <= 48 ? "🌫 雾/霾" : wCode <= 67 ? "🌧 雨" : wCode <= 77 ? "❄️ 雪" : wCode <= 82 ? "🌧 阵雨" : "⛈ 雷雨";
+    const daily = w.daily;
+    const forecastDays = daily ? daily.time.slice(1, 4).map((t, i) => {
+      return `${t.slice(5)} ${daily.temperature_2m_max[i+1]?.toFixed(0)||'?'}/${daily.temperature_2m_min[i+1]?.toFixed(0)||'?'}°C`;
+    }).join(' · ') : '';
+    weatherContextHtml = `
+    <div class="cg-item"><span class="cg-label">🌡 当前天气</span><span class="cg-val">${wDesc} ${w.temp}°C（体感${w.feelsLike}°C）· 湿度${w.humidity}%</span></div>
+    <div class="cg-item"><span class="cg-label">📅 未来三天</span><span class="cg-val">${forecastDays || '暂无'}</span></div>`;
+  }
   document.getElementById("contextHead").innerHTML = `${e} 当前运气 · ${qi.dateRange}`;
   document.getElementById("contextBody").innerHTML = `
     <div class="context-summary"><strong>${g.headline}</strong></div>
     <div class="context-grid">
+      ${weatherContextHtml}
       <div class="cg-item"><span class="cg-label">身体容易</span><span class="cg-val">${g.bodySignals.slice(0,3).join('、')}</span></div>
       <div class="cg-item"><span class="cg-label">饮食方向</span><span class="cg-val eat">多吃 ${g.eatList.slice(0,4).join('、')}</span><span class="cg-val avoid">少碰 ${g.avoidList.slice(0,3).join('、')}</span></div>
     </div>
