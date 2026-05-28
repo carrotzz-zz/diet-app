@@ -1,0 +1,171 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #f5f0e8;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #3e2e1f;
+  padding: 20px;
+}
+
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+h1 {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 5px;
+  color: #5a3e2b;
+}
+
+.subtitle {
+  text-align: center;
+  color: #7a6a5a;
+  margin-bottom: 25px;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 20px 0 10px;
+  color: #5a3e2b;
+  border-bottom: 2px solid #d4b68a;
+  padding-bottom: 5px;
+}
+
+.tip {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.question-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.question-item label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-container input[type="range"] {
+  flex: 1;
+}
+
+.slider-container span {
+  min-width: 30px;
+  text-align: center;
+  font-weight: bold;
+  color: #8b5a2b;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.info {
+  font-size: 14px;
+  color: #7a6a5a;
+  margin-top: 5px;
+}
+
+#preferences label {
+  display: inline-block;
+  background: #fff;
+  padding: 6px 14px;
+  margin: 4px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#preferences input {
+  margin-right: 4px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #8b5a2b;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 18px;
+  margin: 25px 0 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn:hover {
+  background: #6b4220;
+}
+
+.secondary {
+  background: #aaa;
+  margin-top: 10px;
+}
+
+.highlight {
+  font-size: 20px;
+  font-weight: bold;
+  color: #c03a2b;
+  margin: 10px 0;
+}
+
+.diet-card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.diet-card h3 {
+  color: #5a3e2b;
+  margin-bottom: 8px;
+}
+
+.diet-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+.risk {
+  color: #c03a2b;
+  background: #fff3f0;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.disclaimer {
+  margin-top: 30px;
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  border-top: 1px solid #e0d6c8;
+  padding-top: 10px;
+}

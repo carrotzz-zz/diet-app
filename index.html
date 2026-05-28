@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>四季药膳小助手</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🌿 四季药膳小助手</h1>
+    <p class="subtitle" id="seasonHint"></p>
+
+    <div id="quizSection">
+      <h2>① 体质快速测评</h2>
+      <p class="tip">请根据近半年的感受打分（1=完全没有，5=非常明显）</p>
+      <div id="questions"></div>
+
+      <h2>② 常驻地区</h2>
+      <select id="citySelect">
+        <option value="">-- 请选择城市 --</option>
+      </select>
+      <p id="regionResult" class="info"></p>
+
+      <h2>③ 饮食偏好（可多选）</h2>
+      <div id="preferences">
+        <label><input type="checkbox" value="素食"> 素食</label>
+        <label><input type="checkbox" value="忌海鲜"> 忌海鲜</label>
+        <label><input type="checkbox" value="忌辛辣"> 忌辛辣</label>
+        <label><input type="checkbox" value="忌羊肉"> 忌羊肉</label>
+        <label><input type="checkbox" value="忌酒"> 忌酒</label>
+      </div>
+
+      <button id="submitBtn" class="btn">✨ 生成我的药膳推荐</button>
+    </div>
+
+    <div id="resultSection" style="display: none;">
+      <h2>📋 您的体质结果</h2>
+      <p id="constitutionResult" class="highlight"></p>
+      <p id="regionDisplay"></p>
+      <p id="seasonDisplay"></p>
+
+      <h2>🍲 推荐药膳</h2>
+      <div id="dietCards"></div>
+
+      <button id="backBtn" class="btn secondary">⟲ 重新测评</button>
+    </div>
+
+    <footer class="disclaimer">
+      ⚠️ 本工具仅为中医食疗养生参考，不构成医疗诊断。因个人体质差异，食用前请咨询专业医师。
+    </footer>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
