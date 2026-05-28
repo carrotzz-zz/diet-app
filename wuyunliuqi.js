@@ -462,10 +462,28 @@ function getClimateConflict(fromRegion, toRegion) {
 
   // 湿 → 湿（不同湿）
   if (fromRegion.includes('湿') && toRegion.includes('湿') && fromRegion !== toRegion) {
+    // 根据实际气候区动态描述差异
+    const wetTypes = {
+      '华南暖湿': { desc:'终年暖热潮湿', bias:'热' },
+      '华东湿热': { desc:'四季分明、梅雨季湿气尤重', bias:'热' },
+      '华中湿热': { desc:'夏热冬冷、寒湿交替', bias:'寒热都有' },
+      '西南阴湿': { desc:'多雾少太阳、湿气偏寒', bias:'寒' },
+    };
+    const fromDesc = wetTypes[fromRegion]?.desc || fromRegion;
+    const toDesc = wetTypes[toRegion]?.desc || toRegion;
+    const fromBias = wetTypes[fromRegion]?.bias || '';
+    const toBias = wetTypes[toRegion]?.bias || '';
+    let diffNote = '';
+    if (fromBias === '热' && toBias === '寒') diffNote = '你习惯的湿偏热，但这里的湿偏寒——祛湿方法要从"清热化湿"改成"温化寒湿"';
+    else if (fromBias === '热' && toBias === '寒热都有') diffNote = '你习惯的湿偏热，但这里的湿寒热交替——冬天需要温化，夏天需要清化，不能一根筋';
+    else if (fromBias === '寒' && toBias === '热') diffNote = '你习惯的湿偏寒，但这里的湿偏热——不能照搬老家的温化方法，要改用清热祛湿';
+    else if (fromBias === '寒热都有' && toBias === '热') diffNote = '你习惯的湿随季节变，但这里的湿常年偏热——重点在清热而非温化';
+    else if (fromBias === '热' && toBias === '热') diffNote = '虽然都是湿热型，但节奏不同——一个是常年闷着，一个是季节性的，身体需要时间调整祛湿的节奏';
+    else diffNote = '两地的湿有微妙不同，观察身体的反应再决定方向';
     return {
       level: 'medium',
       title: '同样是"湿"，但湿法不一样',
-      body: `你在${fromRegion}习惯了那种湿，但${toRegion}的湿跟你家乡不一样——可能更闷热、或者更阴冷。你以为自己懂"祛湿"，但方向可能偏了。南方的湿偏热，西南的湿偏寒，祛法不同。`,
+      body: `你家乡${fromRegion}的湿是"${fromDesc}"，现居地${toRegion}的湿是"${toDesc}"。${diffNote}。`,
       tips: ['观察自己身体的反应，不要照搬老家的方法', '如果是寒湿→温化（生姜、陈皮）；湿热→清化（薏米、冬瓜）'],
       dietPriority: ['湿'],
     };
