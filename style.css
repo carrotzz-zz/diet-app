@@ -5,10 +5,11 @@ body {
 }
 .container { max-width:500px; margin:0 auto; }
 
-h1 { text-align:center; font-size:24px; color:#5a3e2b; margin-bottom:12px; }
+h1 { text-align:center; font-size:26px; color:#5a3e2b; margin-bottom:4px; }
+.subtitle { text-align:center; font-size:13px; color:#999; margin-bottom:16px; }
 
 h2 {
-  font-size:18px; margin:16px 0 8px; color:#5a3e2b;
+  font-size:17px; margin:20px 0 8px; color:#5a3e2b;
   border-bottom:2px solid #d4b68a; padding-bottom:4px;
 }
 .tip { font-size:13px; color:#888; margin-bottom:8px; }
@@ -19,110 +20,115 @@ h2 {
   margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* ===== 占位卡片 ===== */
-.placeholder-card {
-  text-align:center; padding:28px 18px !important; border:2px dashed #e0d6c8;
-}
-.placeholder-icon { font-size:40px; margin-bottom:10px; }
-.placeholder-text { font-size:14px; color:#7a6a5a; line-height:1.6; }
-.placeholder-text strong { color:#5a3e2b; }
-.placeholder-hint { font-size:12px; color:#bbb; margin-top:6px; }
-
-/* ===== 冲突卡片 ===== */
-.conflict-card { border-left:4px solid #c03a2b; }
-.conflict-hero {
-  display:flex; align-items:flex-start; gap:10px;
-  padding-bottom:12px; border-bottom:1px solid #f0ece4; margin-bottom:10px;
-}
-.hero-emoji { font-size:36px; line-height:1; }
-.hero-text { flex:1; }
-.hero-title { font-size:18px; font-weight:bold; color:#5a3e2b; line-height:1.3; margin-bottom:4px; }
-.hero-sub { font-size:13px; color:#666; line-height:1.5; }
-
-.conflict-list { margin-bottom:8px; }
-.conflict-item {
-  padding:8px 0; border-bottom:1px solid #faf7f0;
-}
-.conflict-item:last-child { border-bottom:none; }
-.ci-head { font-size:14px; margin-bottom:4px; display:flex; align-items:center; gap:4px; }
-.ci-head strong { color:#5a3e2b; }
-.ci-emoji { font-size:16px; }
-.ci-body { font-size:13px; color:#555; line-height:1.5; margin-bottom:4px; }
-.ci-tips { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
-.ci-tip {
-  display:inline-block; background:#f0f8f0; color:#3a6a3a;
-  padding:3px 8px; border-radius:10px; font-size:12px;
-}
-.no-conflict { font-size:13px; color:#5a9e6f; text-align:center; padding:10px 0; }
-
-.conflict-foot { margin-top:6px; padding-top:8px; border-top:1px solid #f0ece4; }
-.priority-bar { font-size:13px; color:#5a3e2b; }
-.priority-tag {
-  display:inline-block; background:#c03a2b; color:#fff;
-  padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;
-  margin:0 2px;
-}
-
-/* 为什么折叠 */
-.why-details { margin-top:8px; border-top:1px solid #f0ece4; padding-top:8px; }
-.why-details summary { font-size:13px; color:#7a6a5a; cursor:pointer; font-weight:bold; }
-.summary-hint { font-weight:normal; color:#bbb; font-size:12px; }
-.why-content { margin-top:6px; font-size:13px; color:#666; line-height:1.6; }
-.why-content p { margin-bottom:4px; }
-.tcm-footnote {
-  margin-top:8px; padding:6px 8px; background:#fafafa; border-radius:6px;
-  font-size:11px; color:#aaa; line-height:1.5;
-}
-
 /* ===== 双城市选择 ===== */
 .dual-city { display:flex; align-items:flex-start; gap:8px; margin-bottom:6px; }
 .city-box { flex:1; }
 .city-box select { width:100%; }
-.city-arrow {
-  font-size:20px; color:#8b5a2b; padding-top:22px; flex-shrink:0;
-}
+.city-arrow { font-size:20px; color:#8b5a2b; padding-top:22px; flex-shrink:0; }
 .city-label { font-size:13px; font-weight:bold; color:#5a3e2b; display:block; margin-bottom:4px; }
-.city-food-hint { font-size:12px; color:#999; margin-top:3px; min-height:16px; }
-.migration-note { font-size:13px; line-height:1.5; margin-top:2px; }
-.migration-badge {
-  display:inline-block; background:#fff3e0; color:#e65100;
-  padding:2px 8px; border-radius:4px; font-weight:bold; margin-right:4px;
+.body-tag {
+  font-size:12px; color:#666; margin-top:4px; padding:4px 8px;
+  background:#fafaf7; border-radius:6px; line-height:1.4;
 }
-.migration-ok { color:#5a9e6f; }
+.body-tag strong { color:#5a3e2b; }
 
-/* ===== 问卷 ===== */
-.question-item {
-  background:#fff; border-radius:10px; padding:10px 14px;
-  margin-bottom:8px; box-shadow:0 1px 4px rgba(0,0,0,0.04);
+/* ===== 水土分析内联 ===== */
+.migration-analysis {
+  margin:8px 0 12px; padding:12px; background:#fff9f0;
+  border-radius:10px; border-left:4px solid #e65100;
 }
-.question-item label { display:block; font-weight:bold; margin-bottom:6px; font-size:14px; }
+.ma-head { font-size:15px; font-weight:bold; color:#5a3e2b; margin-bottom:6px; }
+.ma-body { font-size:13px; color:#666; line-height:1.6; margin-bottom:6px; }
+.ma-tips { display:flex; flex-wrap:wrap; gap:4px; }
+.ma-tip {
+  display:inline-block; background:#e8f5e9; color:#2e7d32;
+  padding:3px 8px; border-radius:10px; font-size:12px;
+}
+.ma-ok { font-size:13px; color:#5a9e6f; }
+
+/* ===== 体质测评 ===== */
+.const-group { margin-bottom:8px; }
+.group-head {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:14px; font-weight:bold; color:#5a3e2b;
+  padding:6px 0; border-bottom:1px solid #f0ece4; margin-bottom:6px;
+}
+.group-status { font-size:12px; font-weight:normal; }
+.group-status.high { color:#c03a2b; }
+.group-status.mid { color:#e65100; }
+.group-status.low { color:#999; }
+
+.question-item {
+  background:#fff; border-radius:10px; padding:8px 14px;
+  margin-bottom:6px; box-shadow:0 1px 4px rgba(0,0,0,0.04);
+}
+.question-item label { display:block; font-weight:bold; margin-bottom:4px; font-size:13px; }
 .slider-container { display:flex; align-items:center; gap:8px; }
 .slider-container input[type="range"] { flex:1; }
 .slider-container span { min-width:24px; text-align:center; font-weight:bold; color:#8b5a2b; font-size:14px; }
+
+.quiz-progress {
+  display:flex; align-items:center; gap:10px; margin-bottom:12px;
+}
+.progress-bar { flex:1; height:6px; background:#e0d6c8; border-radius:3px; overflow:hidden; }
+.progress-fill { height:100%; background:#5a9e6f; border-radius:3px; transition:width 0.3s; width:0; }
+.progress-text { font-size:12px; color:#999; white-space:nowrap; }
+
+/* ===== 体质分数条 ===== */
+.const-result { margin-bottom:10px; }
+.cr-primary { font-size:22px; font-weight:bold; color:#c03a2b; }
+.cr-secondary { font-size:14px; color:#8b5a2b; margin-top:2px; }
+.cr-desc { font-size:13px; color:#666; margin:4px 0 8px; }
+.balanced .cr-primary { color:#5a9e6f; }
+
+.cr-bars { margin-top:8px; }
+.score-bar {
+  display:flex; align-items:center; gap:8px; margin-bottom:3px;
+  font-size:12px;
+}
+.sb-label { width:36px; text-align:right; color:#999; flex-shrink:0; }
+.sb-track { flex:1; height:8px; background:#f0ece4; border-radius:4px; overflow:hidden; }
+.sb-fill { height:100%; border-radius:4px; transition:width 0.3s; }
+.sb-fill.bar-red { background:#c03a2b; }
+.sb-fill.bar-orange { background:#e65100; }
+.sb-fill.bar-gray { background:#ccc; }
+.sb-fill.bar-green { background:#5a9e6f; }
+.sb-val { width:28px; color:#999; flex-shrink:0; }
 
 select {
   width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;
   font-size:15px; background:white;
 }
 
-#preferences label {
-  display:inline-block; background:#fff; padding:6px 10px; margin:3px;
-  border-radius:18px; font-size:13px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.08);
+/* ===== 饮食偏好 ===== */
+.pref-group { margin-bottom:10px; }
+.pref-label { font-size:13px; font-weight:bold; color:#5a3e2b; margin-bottom:4px; }
+.pref-options { display:flex; flex-wrap:wrap; gap:5px; }
+.pref-btn {
+  cursor:pointer; position:relative;
 }
-#preferences input { margin-right:3px; }
+.pref-btn input { position:absolute; opacity:0; width:0; height:0; }
+.pref-btn span {
+  display:inline-block; padding:5px 12px; border-radius:16px;
+  font-size:13px; background:#fff; border:1.5px solid #e0d6c8;
+  color:#7a6a5a; transition:all 0.15s;
+}
+.pref-btn input:checked + span {
+  background:#5a3e2b; border-color:#5a3e2b; color:#fff;
+}
 
 .btn {
   display:block; width:100%; padding:14px; background:#8b5a2b; color:white;
-  border:none; border-radius:30px; font-size:17px; margin:18px 0 10px;
+  border:none; border-radius:30px; font-size:17px; margin:20px 0 10px;
   cursor:pointer; transition:background 0.2s;
 }
 .btn:hover { background:#6b4220; }
 .secondary { background:#aaa; }
 
+/* ===== 结果页 ===== */
 .highlight { font-size:18px; font-weight:bold; color:#c03a2b; margin:6px 0; line-height:1.6; }
 .highlight small { font-size:14px; color:#666; font-weight:normal; }
 
-/* ===== 结果指导面板 ===== */
 .guide-panel { border-left:4px solid #7b4b9a; }
 .guide-headline { font-size:15px; font-weight:bold; color:#5a3e2b; margin-bottom:8px; }
 .guide-body { font-size:13px; }
@@ -135,7 +141,7 @@ select {
 .reason-item strong { display:block; color:#5a3e2b; font-size:13px; margin-bottom:2px; }
 .reason-item p { color:#666; line-height:1.4; font-size:12px; }
 
-/* ===== 运气+气候背景面板 ===== */
+/* ===== 运气背景 ===== */
 .context-panel { border-left:4px solid #5a9e6f; }
 .context-head { font-size:15px; font-weight:bold; color:#5a3e2b; margin-bottom:8px; }
 .context-summary { font-size:14px; color:#5a3e2b; margin-bottom:8px; }
@@ -150,12 +156,19 @@ select {
 .context-detail { margin-top:8px; border-top:1px solid #f0ece4; padding-top:6px; }
 .context-detail summary { font-size:12px; color:#bbb; cursor:pointer; }
 
+.tcm-footnote {
+  margin-top:4px; padding:6px 8px; background:#fafafa; border-radius:6px;
+  font-size:11px; color:#aaa; line-height:1.5;
+}
+
 /* ===== 药膳卡片 ===== */
+.refresh-hint { font-size:12px; color:#999; margin-bottom:8px; text-align:center; }
 .diet-card {
   background:white; border-radius:12px; padding:14px;
   margin-bottom:12px; box-shadow:0 3px 10px rgba(0,0,0,0.07);
 }
-.diet-card h3 { color:#5a3e2b; margin-bottom:6px; }
+.diet-card h3 { color:#5a3e2b; margin-bottom:4px; }
+.taste-hint { font-size:12px; color:#999; margin-bottom:6px; }
 .match-reason {
   font-size:13px; color:#5a9e6f; background:#f1f8f4;
   padding:6px 10px; border-radius:6px; margin-bottom:8px; line-height:1.5;

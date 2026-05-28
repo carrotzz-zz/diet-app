@@ -3,95 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>四季药膳小助手</title>
+  <title>吾乡帖</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>四季药膳小助手</h1>
+    <h1>吾乡帖</h1>
+    <p class="subtitle">一方水土一方人，换了水土怎么安身</p>
 
-    <!-- 冲突分析卡片 —— 首页主角 -->
-    <div class="panel conflict-card" id="conflictCard" style="display:none;">
-      <div class="conflict-hero" id="conflictHero"></div>
-      <div class="conflict-list" id="conflictList"></div>
-      <div class="conflict-foot" id="conflictFoot"></div>
-      <details class="why-details">
-        <summary>了解背后的原理<span class="summary-hint">（五运六气 + 气候分析）</span></summary>
-        <div class="why-content" id="whyContent"></div>
-      </details>
-    </div>
+    <div id="mainSection">
 
-    <!-- 未选城市时的占位 -->
-    <div class="panel placeholder-card" id="placeholderCard">
-      <div class="placeholder-icon">🌍</div>
-      <div class="placeholder-text">
-        <strong>选好家乡和现居城市</strong>后，这里会显示你的身体与环境之间的"冲突点"
-      </div>
-      <div class="placeholder-hint">越是不匹配，越需要调整饮食</div>
-    </div>
-
-    <div id="quizSection">
-      <h2>① 体质快速测评</h2>
-      <p class="tip">请根据近半年的感受打分（1=完全没有，5=非常明显）</p>
-      <div id="questions"></div>
-
-      <h2>② 你从哪里来，现在在哪里</h2>
+      <!-- ① 家乡 + 现居地 -->
+      <h2>① 你从哪里来，现在在哪里</h2>
       <div class="dual-city">
         <div class="city-box">
-          <label class="city-label">🏠 家乡（从小生活的地方）</label>
-          <select id="hometownSelect">
-            <option value="">-- 请选择 --</option>
-          </select>
-          <p class="city-food-hint" id="hometownFood"></p>
+          <label class="city-label">🏠 家乡</label>
+          <select id="hometownSelect"><option value="">-- 请选择 --</option></select>
+          <div id="hometownTag" class="body-tag" style="display:none;"></div>
         </div>
         <div class="city-arrow">→</div>
         <div class="city-box">
           <label class="city-label">📍 现居城市</label>
-          <select id="citySelect">
-            <option value="">-- 请选择 --</option>
-          </select>
-          <p class="city-food-hint" id="currentFood"></p>
+          <select id="citySelect"><option value="">-- 请选择 --</option></select>
+          <div id="currentTag" class="body-tag" style="display:none;"></div>
         </div>
       </div>
-      <div id="migrationNote" class="migration-note"></div>
+      <div id="migrationAnalysis" class="migration-analysis" style="display:none;"></div>
 
-      <h2>③ 饮食偏好（可多选）</h2>
-      <div id="preferences">
-        <label><input type="checkbox" value="素食"> 素食</label>
-        <label><input type="checkbox" value="忌海鲜"> 忌海鲜</label>
-        <label><input type="checkbox" value="忌辛辣"> 忌辛辣</label>
-        <label><input type="checkbox" value="忌羊肉"> 忌羊肉</label>
-        <label><input type="checkbox" value="忌酒"> 忌酒</label>
+      <!-- ② 体质测评 -->
+      <h2>② 体质快速测评</h2>
+      <p class="tip">请根据近半年的感受打分（1=完全没有，5=非常明显）</p>
+      <div id="quizProgress" class="quiz-progress" style="display:none;">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="progress-text" id="progressText">0/9 组完成</span>
+      </div>
+      <div id="questions"></div>
+
+      <!-- ③ 饮食偏好 -->
+      <h2>③ 你的日常饮食</h2>
+
+      <div class="pref-group">
+        <div class="pref-label">日常口味（可多选）</div>
+        <div class="pref-options" id="prefTaste"></div>
+      </div>
+
+      <div class="pref-group">
+        <div class="pref-label">主食结构</div>
+        <div class="pref-options" id="prefStaple"></div>
+      </div>
+
+      <div class="pref-group">
+        <div class="pref-label">肉食习惯</div>
+        <div class="pref-options" id="prefMeat"></div>
+      </div>
+
+      <div class="pref-group">
+        <div class="pref-label">烹饪偏好</div>
+        <div class="pref-options" id="prefCook"></div>
+      </div>
+
+      <div class="pref-group">
+        <div class="pref-label">饮品习惯</div>
+        <div class="pref-options" id="prefDrink"></div>
+      </div>
+
+      <div class="pref-group">
+        <div class="pref-label">吃辣程度</div>
+        <div class="pref-options" id="prefSpicy"></div>
+      </div>
+
+      <div class="pref-group">
+        <div class="pref-label">忌口/过敏（有才选）</div>
+        <div class="pref-options" id="prefAvoid"></div>
       </div>
 
       <button id="submitBtn" class="btn">✨ 生成我的药膳推荐</button>
     </div>
 
     <div id="resultSection" style="display: none;">
-      <h2>📋 你的体质</h2>
-      <p id="constitutionResult" class="highlight"></p>
+      <h2>📋 你的体质画像</h2>
+      <div id="constitutionResult"></div>
 
-      <!-- 结果页冲突分析 -->
       <div class="panel guide-panel" id="guidePanel">
         <div class="guide-headline">🎯 为什么推荐这些</div>
         <div class="guide-body" id="guideBody"></div>
       </div>
 
-      <!-- 运气+气候背景 -->
       <div class="panel context-panel" id="contextPanel">
         <div class="context-head" id="contextHead"></div>
         <div class="context-body" id="contextBody"></div>
       </div>
 
       <h2>🍲 推荐药膳</h2>
+      <p class="refresh-hint" id="refreshHint">🔄 刷新页面可看到不同的推荐</p>
       <div id="dietCards"></div>
 
       <button id="backBtn" class="btn secondary">⟲ 重新测评</button>
     </div>
 
     <footer class="disclaimer">
-      ⚠️ 本工具仅为中医食疗养生参考，不构成医疗诊断。因个人体质差异，食用前请咨询专业医师。<br>
-      天气数据：Open-Meteo · 五运六气依据《黄帝内经》运气七篇
+      ⚠️ 本工具仅为食疗养生参考，不构成医疗诊断。食用前请咨询专业医师。<br>
+      天气数据：Open-Meteo · 五运六气据《黄帝内经》
     </footer>
   </div>
 
