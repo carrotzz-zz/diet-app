@@ -654,7 +654,8 @@ function detectClimateAlerts(daily) {
   const precip = daily.precipitation_sum;
 
   for (let i = 1; i < days.length; i++) {
-    const prevMax = tMax[i-1], currMax = tMax[i];
+    if (tMax[i-1] == null || tMax[i] == null) continue;
+        const prevMax = tMax[i-1], currMax = tMax[i];
     const prevMin = tMin[i-1], currMin = tMin[i];
     const drop24h = prevMax - currMax;
     const rise24h = currMax - prevMax;
@@ -689,7 +690,8 @@ function detectClimateAlerts(daily) {
   // 48h湿度骤变（需要 humidity 数据，用降水+温差做 proxy：大幅温差往往伴随干湿变化）
   // 用连续两天的温差变化幅度近似
   for (let i = 2; i < days.length; i++) {
-    const range1 = tMax[i-2] - tMin[i-2];
+    if (tMax[i-2] == null || tMin[i-2] == null || tMax[i] == null || tMin[i] == null) continue;
+        const range1 = tMax[i-2] - tMin[i-2];
     const range2 = tMax[i] - tMin[i];
     if (Math.abs(range2 - range1) >= 10 && !alerts.find(a=>a.date===days[i]&&a.type==='温差异常')) {
       alerts.push({ date: days[i], type:'温差异常', evil:'风',
