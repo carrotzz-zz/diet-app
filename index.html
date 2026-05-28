@@ -9,26 +9,47 @@
 <body>
   <div class="container">
     <h1>四季药膳小助手</h1>
-    <p class="subtitle" id="seasonHint"></p>
 
-    <!-- 五运六气面板 -->
-    <div class="panel wylq-panel" id="wylqPanel">
-      <div class="panel-header">
-        <span class="panel-icon">☯</span>
-        <span>五运六气 · 当前格局</span>
+    <!-- 大白话提醒卡片 -->
+    <div class="panel health-card" id="healthCard">
+      <div class="card-top">
+        <span class="card-emoji" id="cardEmoji">🌿</span>
+        <div class="card-head">
+          <div class="card-headline" id="cardHeadline">加载中…</div>
+          <div class="card-sub" id="cardSub"></div>
+        </div>
       </div>
-      <div class="wylq-content" id="wylqContent">加载中…</div>
+      <div class="card-section">
+        <div class="section-label">你可能感觉</div>
+        <div class="signal-list" id="bodySignals"></div>
+      </div>
+      <div class="card-section">
+        <div class="section-label">建议这样做</div>
+        <div class="do-list" id="doList"></div>
+      </div>
+      <div class="card-section row-split">
+        <div>
+          <div class="section-label eat">可以多吃</div>
+          <div class="tag-list" id="eatList"></div>
+        </div>
+        <div>
+          <div class="section-label avoid">尽量少碰</div>
+          <div class="tag-list" id="avoidList"></div>
+        </div>
+      </div>
+      <details class="why-details">
+        <summary>为什么？<span class="summary-hint">（点击看原理）</span></summary>
+        <div class="why-content" id="whyContent"></div>
+      </details>
     </div>
 
-    <!-- 天气面板 -->
-    <div class="panel weather-panel" id="weatherPanel" style="display:none;">
-      <div class="panel-header">
-        <span class="panel-icon">🌤</span>
-        <span>实时天气对照</span>
+    <!-- 天气小卡 -->
+    <div class="panel weather-mini" id="weatherMini" style="display:none;">
+      <div class="weather-mini-top">
+        <span id="weatherIcon" class="w-icon">🌤</span>
+        <span id="weatherSummary" class="w-text"></span>
       </div>
-      <div class="weather-content" id="weatherContent">
-        <p class="muted">请先选择常驻城市，查看天气与运气对照</p>
-      </div>
+      <div id="weatherDeviation" class="w-deviation"></div>
     </div>
 
     <div id="quizSection">
@@ -36,12 +57,11 @@
       <p class="tip">请根据近半年的感受打分（1=完全没有，5=非常明显）</p>
       <div id="questions"></div>
 
-      <h2>② 常驻地区</h2>
+      <h2>② 常驻城市</h2>
       <select id="citySelect">
         <option value="">-- 请选择城市 --</option>
       </select>
-      <p id="regionResult" class="info"></p>
-      <div id="cityWylqNote" class="info wylq-note"></div>
+      <div id="climateNote" class="climate-note"></div>
 
       <h2>③ 饮食偏好（可多选）</h2>
       <div id="preferences">
@@ -56,18 +76,13 @@
     </div>
 
     <div id="resultSection" style="display: none;">
-      <h2>📋 您的体质结果</h2>
+      <h2>📋 您的体质</h2>
       <p id="constitutionResult" class="highlight"></p>
-      <p id="regionDisplay"></p>
-      <p id="seasonDisplay"></p>
 
-      <!-- 运气分析结果 -->
-      <div class="panel analysis-panel" id="analysisPanel">
-        <div class="panel-header">
-          <span class="panel-icon">🔍</span>
-          <span>运气+天气综合分析</span>
-        </div>
-        <div id="analysisContent"></div>
+      <!-- 结果页的运气指导 -->
+      <div class="panel guide-panel" id="guidePanel">
+        <div class="guide-headline" id="guideHeadline"></div>
+        <div class="guide-body" id="guideBody"></div>
       </div>
 
       <h2>🍲 推荐药膳</h2>
@@ -78,7 +93,7 @@
 
     <footer class="disclaimer">
       ⚠️ 本工具仅为中医食疗养生参考，不构成医疗诊断。因个人体质差异，食用前请咨询专业医师。<br>
-      天气数据来源：Open-Meteo（免费开放API）
+      天气数据来源：Open-Meteo（免费开放API）· 五运六气依据《黄帝内经》运气七篇推算
     </footer>
   </div>
 

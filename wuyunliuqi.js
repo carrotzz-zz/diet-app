@@ -206,3 +206,192 @@ function analyzeQiVsWeather(wylq, weather, climateZone) {
     adviceFoods: WUXING_ADVICE[foodWx]?.foods || [],
   };
 }
+
+// ========== 大白话翻译层 ==========
+
+// 客气 → 大白话身体指南
+const KEQI_PLAIN = {
+  '厥阴风木': {
+    headline: '风邪活跃，注意防风护肝',
+    bodySignals: ['容易头痛、头晕', '关节酸胀、游走性疼痛', '皮肤容易过敏、发痒', '情绪波动大，容易烦躁'],
+    doList: ['出门戴帽子或围巾防风', '避免风口久坐', '晚上11点前睡觉养肝'],
+    eatList: ['菊花', '枸杞', '桑叶', '白芍', '芹菜', '菠菜'],
+    avoidList: ['辛辣刺激', '酒', '海鲜等发物', '油炸食品'],
+    why: '风气通于肝，风邪活跃时肝气容易郁结或上亢',
+  },
+  '少阴君火': {
+    headline: '热气偏盛，注意清心安神',
+    bodySignals: ['容易心烦、睡不好', '嘴巴长溃疡、牙龈肿痛', '心慌、心跳快', '脸上容易长痘'],
+    doList: ['午间小憩15-30分钟养心', '傍晚散步微微出汗', '睡前不刷手机，帮助入眠'],
+    eatList: ['莲子', '百合', '麦冬', '苦瓜', '绿豆'],
+    avoidList: ['辛辣', '煎炸烧烤', '羊肉', '酒', '咖啡浓茶'],
+    why: '热气通于心，心火偏旺时睡眠和情绪首当其冲',
+  },
+  '少阳相火': {
+    headline: '暑热当令，注意清热解暑',
+    bodySignals: ['容易中暑、头晕恶心', '口干舌燥、喝水不解渴', '烦躁易怒', '皮肤长疮长疖'],
+    doList: ['避开正午高温出门', '多喝温水，少量多次', '穿透气宽松衣服'],
+    eatList: ['绿豆', '冬瓜', '荷叶', '西瓜（适量）', '苦瓜'],
+    avoidList: ['大辛大热', '油腻厚味', '烈酒', '冰镇饮料（伤脾胃）'],
+    why: '暑热是一年中最旺的火气，身体像被"烤"着，需要内外一起降温',
+  },
+  '太阴湿土': {
+    headline: '湿气困脾，注意健脾祛湿',
+    bodySignals: ['身体沉重、懒得动', '食欲差、饭后胀气', '大便粘腻冲不干净', '舌苔厚腻、口黏'],
+    doList: ['适当运动出汗排湿', '少吃生冷甜腻', '房间注意通风除湿'],
+    eatList: ['薏米', '茯苓', '白术', '陈皮', '冬瓜', '山药'],
+    avoidList: ['生冷食物', '甜腻糕点', '肥肉', '冰饮', '牛奶过量'],
+    why: '湿气最喜欢"困"住脾胃，脾胃一弱，全身就没劲',
+  },
+  '阳明燥金': {
+    headline: '燥气当道，注意润肺生津',
+    bodySignals: ['喉咙干痒、干咳', '皮肤干燥起皮、嘴唇裂', '鼻子干、容易流鼻血', '大便干结'],
+    doList: ['室内放加湿器或水盆', '晨起喝一杯温水', '洗澡水温不要太高'],
+    eatList: ['沙参', '玉竹', '雪梨', '银耳', '蜂蜜', '麦冬'],
+    avoidList: ['辛辣烧烤', '油炸', '炒货干果', '过咸食物'],
+    why: '燥气最伤肺和皮肤，身体的"润"都被抽走了，要从内到外补回去',
+  },
+  '太阳寒水': {
+    headline: '寒气逼人，注意温阳保暖',
+    bodySignals: ['手脚冰凉、怕冷', '关节冷痛加重', '容易感冒、流清鼻涕', '腰膝酸软、夜尿多'],
+    doList: ['热水泡脚20分钟/天', '腰腹和脚踝一定要保暖', '晒太阳15-30分钟补阳气'],
+    eatList: ['生姜', '肉桂', '当归', '核桃', '羊肉', '杜仲'],
+    avoidList: ['生冷食物', '冰饮', '寒性水果（西瓜、梨）', '空腹喝凉水'],
+    why: '寒气最容易伤阳气，尤其是肾阳，身体像被"冻住"了一样',
+  },
+};
+
+// 主客交互 → 大白话补充
+function getMainKeInteractionNote(zhuQi, keQi) {
+  const pairs = {
+    '厥阴风木+少阴君火': '风助火势，热感比纯热更难受，容易上火+过敏一起来',
+    '厥阴风木+太阴湿土': '风湿夹杂，像梅雨天——又闷又沉，关节和脾胃都不舒服',
+    '少阴君火+少阳相火': '两火相加，热上加热，特别容易心烦气躁、失眠',
+    '少阴君火+阳明燥金': '上面热下面燥，容易口干心烦同时皮肤干燥',
+    '少阳相火+太阴湿土': '湿热交蒸，像桑拿天——闷热难耐，容易长痘长疮',
+    '少阳相火+阳明燥金': '"秋老虎"天气，又热又干，燥咳+心烦一起来',
+    '太阴湿土+太阳寒水': '寒湿困体，又冷又潮，关节痛+胃寒腹泻',
+    '阳明燥金+太阳寒水': '干冷交加，皮肤干裂+手脚冰凉，北方冬天典型体感',
+  };
+  for (let [key, val] of Object.entries(pairs)) {
+    const [a, b] = key.split('+');
+    if ((zhuQi === a && keQi === b) || (zhuQi === b && keQi === a)) return val;
+  }
+  return null;
+}
+
+// 岁运 → 大白话年度基调
+function getSuiYunPlain(suiYun) {
+  const map = {
+    '木运太过': '今年全年风大温高，肝气偏旺，注意情绪管理和养肝',
+    '木运不及': '今年春生之力不足，容易疲劳乏力气短，重在养肝补气',
+    '火运太过': '今年全年偏热，心火偏旺，注意清心养神、防中暑',
+    '火运不及': '今年阳气偏弱，容易怕冷心慌，重在温补心阳',
+    '土运太过': '今年全年偏湿，脾胃负担重，注意健脾祛湿',
+    '土运不及': '今年消化能力偏弱，容易腹胀腹泻，重在健脾益气',
+    '金运太过': '今年全年偏燥，肺和皮肤容易干燥，注意润肺生津',
+    '金运不及': '今年抵抗力偏弱，容易感冒咳嗽，重在补肺固表',
+    '水运太过': '今年全年偏寒，肾阳易耗，注意温补肾阳、保暖',
+    '水运不及': '今年藏精之力不足，容易腰膝酸软，重在滋补肾阴',
+  };
+  return map[suiYun] || '';
+}
+
+// 气候区 → 大白话体质背景
+function getClimatePlain(region) {
+  const map = {
+    '华南暖湿': '常年湿热，身体底子偏"湿+热"，祛湿是广东人一辈子的功课',
+    '华东湿热': '四季分明但偏湿，梅雨季尤其难受，脾胃容易受湿气困扰',
+    '华中湿热': '夏热冬冷都带湿，寒湿湿热交替，肠胃要特别关照',
+    '西南阴湿': '多雾少太阳，湿气入骨难除，风湿关节问题高发',
+    '华北干燥': '干风多雨水少，肺和皮肤常年偏干，润肺是头等大事',
+    '东北寒燥': '冬天又长又冷又干，寒燥双杀，阳虚体质的人特别多',
+    '西北干寒': '又干又冷，寒燥叠加，比单纯冷或干都更伤身体',
+    '青藏高寒': '高海拔缺氧+寒冷，气血运行慢，寒凝血瘀多见',
+  };
+  return map[region] || '';
+}
+
+// 天气 → 大白话对照
+function getWeatherPlain(weather, keEvil) {
+  const t = weather.temp;
+  const h = weather.humidity;
+  const parts = [];
+
+  // 温度大白话
+  if (t >= 35) parts.push('今天很热（' + t + '°C），注意防暑');
+  else if (t >= 28) parts.push('今天偏热（' + t + '°C）');
+  else if (t >= 20) parts.push('今天温暖舒适（' + t + '°C）');
+  else if (t >= 10) parts.push('今天偏凉（' + t + '°C），注意加衣');
+  else if (t >= 0) parts.push('今天冷（' + t + '°C），注意保暖');
+  else parts.push('今天很冷（' + t + '°C），务必保暖防冻');
+
+  // 湿度大白话
+  if (h >= 80) parts.push('湿度很高（' + h + '%），体感闷湿');
+  else if (h >= 60) parts.push('湿度适中（' + h + '%）');
+  else parts.push('偏干燥（' + h + '%），注意补水');
+
+  // 与运气的偏差
+  const deviation = [];
+  if (keEvil === '寒' && t > 15) deviation.push('这阵子按理该偏冷，但实际偏暖——身体容易"上当"，毛孔开了寒气一来就感冒，出门多带件外套');
+  if (keEvil === '热' && t < 10) deviation.push('这阵子按理该偏暖，但实际偏冷——寒热错杂最难将息，既要注意保暖，又不能补过头');
+  if (keEvil === '湿' && h < 50) deviation.push('这阵子按理该偏湿，但实际偏干——燥和湿的预期相反，润燥为先');
+  if (keEvil === '燥' && h > 75) deviation.push('这阵子按理该偏燥，但实际湿气重——湿气把燥掩盖了，化湿比润燥更急');
+
+  return { summary: parts.join(' · '), deviation };
+}
+
+// ========== 主函数：生成大白话指南 ==========
+function getPlainGuidance(wylq, weather, cityInfo) {
+  const qi = wylq.currentQi;
+  const p = wylq.pattern;
+  const keData = KEQI_PLAIN[qi.keQi] || KEQI_PLAIN['少阴君火'];
+  const zhuData = KEQI_PLAIN[qi.zhuQi] || KEQI_PLAIN['少阴君火'];
+  const interaction = getMainKeInteractionNote(qi.zhuQi, qi.keQi);
+  const yearNote = getSuiYunPlain(p.suiYun);
+  const climateNote = cityInfo ? getClimatePlain(cityInfo.region) : '';
+
+  // 天气分析
+  let weatherGuide = null;
+  if (weather) {
+    weatherGuide = getWeatherPlain(weather, qi.keInfo.evil);
+  }
+
+  // 合并饮食建议（去重）
+  const allEat = [...new Set([...keData.eatList, ...(WUXING_ADVICE[QI_WUXING[qi.keQi]]?.foods || [])])];
+  const allAvoid = [...new Set([...keData.avoidList])];
+
+  return {
+    // 一句话标题
+    headline: keData.headline,
+    // 身体感受
+    bodySignals: keData.bodySignals,
+    // 该做什么
+    doList: keData.doList,
+    // 推荐食材
+    eatList: allEat.slice(0, 6),
+    // 少碰什么
+    avoidList: allAvoid.slice(0, 5),
+    // 为什么（大白话版）
+    why: keData.why,
+    // 主客交互
+    interaction,
+    // 年度背景
+    yearNote,
+    // 气候背景
+    climateNote,
+    // 天气对照
+    weatherGuide,
+    // 详情（给想看的人）
+    tcmDetail: {
+      ganZhi: p.ganZhi,
+      suiYun: p.suiYun,
+      siTian: p.siTian,
+      zaiQuan: p.zaiQuan,
+      qiName: qi.name,
+      zhuQi: qi.zhuQi,
+      keQi: qi.keQi,
+      dateRange: qi.dateRange,
+    },
+  };
+}
