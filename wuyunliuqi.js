@@ -700,7 +700,47 @@ function detectClimateAlerts(daily) {
     }
   }
 
-  return alerts.slice(0, 10);
+  // 合并同类连续预警
+  return mergeAlerts(alerts);
+}
+
+function mergeAlerts(raw) {
+  if (raw.length === 0) return [];
+  // 分离持续型（阴雨、高温）和单日型（寒潮、热浪、温差）
+  const ranges = []; // 持续型合并结果
+  const singles = []; // 单日型
+  const used = new Set();
+
+  for (let i = 0; i < raw.length; i++) {
+    const a = raw[i];
+    if (used.has(i)) continue;
+    if (a.type === '持续阴雨' || a.type === '持续高温') {
+      // 向后扫描连续同类
+      let end = i;
+      while (end + 1 < raw.length && raw[end + 1].type === a.type) { end++; }
+      for (let j = i; j <= end; j++) used.add(j);
+      ranges.push({
+        type: a.type, evil: a.evil, priority: a.priority,
+        start: raw[i].date, end: raw[end].date,
+        msg: a.type === '持续阴雨'
+          ? `${raw[i].date.slice(5)} ~ ${raw[end].date.slice(5)} 连续阴雨，湿气加重`
+          : `${raw[i].date.slice(5)} ~ ${raw[end].date.slice(5)} 持续高温 ≥35°C，注意防暑`,
+      });
+    } else {
+      singles.push(a);
+    }
+  }
+
+  // 合并输出：持续型在前，单日型在后，总共最多6条
+  const merged = [...ranges, ...singles];
+  return merged.slice(0, 6).map(a => {
+    if (a.start) {
+      // 区间型
+      return { date: a.start + '~' + a.end, type: a.type, evil: a.evil,
+        msg: a.msg, priority: a.priority };
+    }
+    return a;
+  });
 }
 
 // ========== 跨文化饮食推荐：家乡食物 × 现居地气候 ==========

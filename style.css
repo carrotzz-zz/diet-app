@@ -144,6 +144,11 @@ select {
 .reason-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
 .reason-item strong { display:block; color:#5a3e2b; font-size:13px; margin-bottom:2px; }
 .reason-item p { color:#666; line-height:1.4; font-size:12px; }
+.alert-item {
+  font-size:13px; color:#5a3e2b; padding:4px 0;
+  border-bottom:1px solid #f0ece4; line-height:1.5;
+}
+.alert-item:last-child { border-bottom:none; }
 
 /* ===== 运气背景 ===== */
 .context-panel { border-left:4px solid #5a9e6f; }

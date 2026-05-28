@@ -565,7 +565,12 @@ document.getElementById("submitBtn").addEventListener("click", function() {
 
   // 天气预警（优先显示）
   if (weatherAlerts.length > 0) {
-    guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>🌡 未来天气剧变预警</strong><p>${weatherAlerts.map(a=>a.msg).join('<br>')}</p></div></div>`;
+    const alertIcons = { '寒潮降温':'❄️', '热浪升温':'🔥', '持续高温':'☀️', '持续阴雨':'🌧', '温差异常':'🌬' };
+    const alertHTML = weatherAlerts.map(a => {
+      const icon = alertIcons[a.type] || '⚠️';
+      return `<div class="alert-item"><span>${icon}</span> ${a.msg}</div>`;
+    }).join('');
+    guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>🌡 未来天气剧变预警</strong>${alertHTML}</div></div>`;
     if (weatherAlertDiets.length > 0) {
       guideHtml += `<div class="reason-item"><span class="reason-icon">🍲</span><div><strong>应对天气变化的推荐药膳</strong><p>${weatherAlertDiets.slice(0,4).map(d=>d.name).join('、')}</p></div></div>`;
     }
