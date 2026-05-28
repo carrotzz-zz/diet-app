@@ -478,10 +478,36 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   candidates.forEach(d => { d._score = scoreDiet(d, currentConflictAnalysis, con, prefs); });
   candidates.sort((a, b) => b._score - a._score);
 
-  // 取前10进候选池，随机抽3
-  const pool = candidates.slice(0, Math.min(10, candidates.length));
+  // 本地菜优先：origin 匹配当前城市省份或气候区
+  const lp = cInfo.province || '';
+  const lr = cInfo.region || '';
+  function isLocalDish(d) {
+    if (!d.origin) return false;
+    const o = d.origin;
+    if (lp && (o.includes(lp) || lp.includes(o))) return true;
+    // region关键词匹配：如 "华东湿热" 匹配 origin "华东"
+    const regionParts = lr.split(/[东西南北中]/).filter(Boolean);
+    for (let rp of regionParts) {
+      if (rp.length >= 2 && o.includes(rp)) return true;
+    }
+    if (o === lr) return true;
+    return false;
+  }
+  const localDishes = candidates.filter(isLocalDish);
+  const nonLocal = candidates.filter(d => !isLocalDish(d));
+  // 把本地菜按分数插入前10
+  const merged = [];
+  for (let d of localDishes) { if (merged.length < 10) merged.push(d); }
+  for (let d of nonLocal) { if (merged.length < 10) merged.push(d); }
+  // merged 前几个是分数最高的 local，然后填充 nonLocal（都已按分数排好）
+  // 取前10进候选池，随机抽3，但保证至少1道本地菜
+  const pool = merged.slice(0, Math.min(10, merged.length));
   shuffleArray(pool);
-  const results = pool.slice(0, 3);
+  let results = pool.slice(0, 3);
+  // 如果抽出的3道里没有本地菜，强行把第一道换成最高分本地菜
+  if (localDishes.length > 0 && !results.some(isLocalDish)) {
+    results[0] = localDishes[0];
+  }
 
   // 视图
   document.getElementById("mainSection").style.display = "none";
@@ -620,8 +646,8 @@ document.getElementById("submitBtn").addEventListener("click", function() {
       const score = d._score || 0;
       const badge = score >= 6 ? '<span class="qi-badge hot">强烈推荐</span>' : score >= 3 ? '<span class="qi-badge">推荐</span>' : '';
       card.innerHTML = `
-        <h3>🍲 ${d.name} ${badge}</h3>
-        <p class="taste-hint">👅 口感：${d.taste || '好入口'}</p>
+        <h3>🍲 ${d.name} ${badge} ${d.origin ? `<span style="font-size:12px;color:#8b5a2b;background:#faf0e0;padding:2px 6px;border-radius:8px;">📍 ${d.origin}</span>` : ''}</h3>
+        ${d.taste ? `<p class="taste-hint">👅 口感：${d.taste}</p>` : ''}
         <p><strong>食材：</strong>${d.ingredients}</p>
         <p><strong>做法：</strong>${d.method}</p>
         <p><strong>功效：</strong>${d.effect}</p>
