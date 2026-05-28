@@ -649,59 +649,58 @@ function detectClimateAlerts(daily) {
   if (!daily || !daily.time || daily.time.length < 2) return [];
   const alerts = [];
   const days = daily.time;
-  const tMax = daily.temperature_2m_max;
-  const tMin = daily.temperature_2m_min;
-  const precip = daily.precipitation_sum;
+  const rawMax = daily.temperature_2m_max || [];
+  const rawMin = daily.temperature_2m_min || [];
+  const rawPrecip = daily.precipitation_sum || [];
 
-  for (let i = 1; i < days.length; i++) {
-    if (tMax[i-1] == null || tMax[i] == null) continue;
-        const prevMax = tMax[i-1], currMax = tMax[i];
-    const prevMin = tMin[i-1], currMin = tMin[i];
+  // 清洗：将 null 替换为前一天的数值，开头为 null 的跳过
+  const tMax = [], tMin = [], precip = [];
+  for (let i = 0; i < days.length; i++) {
+    if (rawMax[i] == null || rawMin[i] == null) continue;
+    tMax.push(rawMax[i]);
+    tMin.push(rawMin[i]);
+    precip.push(rawPrecip[i] == null ? 0 : rawPrecip[i]);
+  }
+  if (tMax.length < 2) return [];
+
+  for (let i = 1; i < tMax.length; i++) {
+    const prevMax = tMax[i-1], currMax = tMax[i];
     const drop24h = prevMax - currMax;
     const rise24h = currMax - prevMax;
 
-    // 寒潮：24h降温≥8°C
     if (drop24h >= 8) {
       alerts.push({ date: days[i], type:'寒潮降温', evil:'寒',
-        msg: `${days[i].slice(5)} 最高温骤降 ${drop24h.toFixed(0)}°C（${currMax.toFixed(0)}°C），寒邪来袭`,
+        msg: `${days[i] ? days[i].slice(5) : '?'} 最高温骤降 ${drop24h.toFixed(0)}°C（${currMax.toFixed(0)}°C），寒邪来袭`,
         priority: 'high' });
-    }
-    // 热浪：24h升温≥8°C
-    else if (rise24h >= 8) {
+    } else if (rise24h >= 8) {
       alerts.push({ date: days[i], type:'热浪升温', evil:'热',
-        msg: `${days[i].slice(5)} 最高温骤升 ${rise24h.toFixed(0)}°C（${currMax.toFixed(0)}°C），暑热突袭`,
+        msg: `${days[i] ? days[i].slice(5) : '?'} 最高温骤升 ${rise24h.toFixed(0)}°C（${currMax.toFixed(0)}°C），暑热突袭`,
         priority: 'high' });
     }
-    // 持续高温：连续3天≥35°C
     if (i >= 2 && currMax >= 35 && tMax[i-1] >= 35 && tMax[i-2] >= 35 && !alerts.find(a=>a.date===days[i]&&a.type==='持续高温')) {
       alerts.push({ date: days[i], type:'持续高温', evil:'暑',
-        msg: `${days[i-2].slice(5)}起连续高温 ≥35°C，注意防暑`,
+        msg: `${days[i-2] ? days[i-2].slice(5) : '?'}起连续高温 ≥35°C，注意防暑`,
         priority: 'high' });
     }
-    // 持续阴雨：连续3天有降水
     if (i >= 2 && precip[i] > 0 && precip[i-1] > 0 && precip[i-2] > 0 && !alerts.find(a=>a.date===days[i]&&a.type==='持续阴雨')) {
       const totalRain = (precip[i-2]+precip[i-1]+precip[i]).toFixed(0);
       alerts.push({ date: days[i], type:'持续阴雨', evil:'湿',
-        msg: `${days[i-2].slice(5)}起连续3天有雨（累计${totalRain}mm），湿气加重`,
+        msg: `${days[i-2] ? days[i-2].slice(5) : '?'}起连续3天有雨（累计${totalRain}mm），湿气加重`,
         priority: 'medium' });
     }
   }
 
-  // 48h湿度骤变（需要 humidity 数据，用降水+温差做 proxy：大幅温差往往伴随干湿变化）
-  // 用连续两天的温差变化幅度近似
-  for (let i = 2; i < days.length; i++) {
-    if (tMax[i-2] == null || tMin[i-2] == null || tMax[i] == null || tMin[i] == null) continue;
-        const range1 = tMax[i-2] - tMin[i-2];
+  for (let i = 2; i < tMax.length; i++) {
+    const range1 = tMax[i-2] - tMin[i-2];
     const range2 = tMax[i] - tMin[i];
     if (Math.abs(range2 - range1) >= 10 && !alerts.find(a=>a.date===days[i]&&a.type==='温差异常')) {
       alerts.push({ date: days[i], type:'温差异常', evil:'风',
-        msg: `${days[i].slice(5)} 昼夜温差剧烈变化，易受风邪，注意衣物增减`,
+        msg: `${days[i] ? days[i].slice(5) : '?'} 昼夜温差剧烈变化，易受风邪，注意衣物增减`,
         priority: 'medium' });
     }
   }
 
-  // 只取未来7天内的预警，去重
-  return alerts.filter((a, i) => i < 10);
+  return alerts.slice(0, 10);
 }
 
 // ========== 跨文化饮食推荐：家乡食物 × 现居地气候 ==========
