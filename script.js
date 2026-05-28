@@ -456,6 +456,35 @@ document.getElementById("submitBtn").addEventListener("click", function() {
 
   document.getElementById("guideBody").innerHTML = guideHtml;
 
+  // 运气+气候背景
+  const e = emojiMap[qi.keInfo.evil] || '🌿';
+  document.getElementById("contextHead").innerHTML =
+    `${e} 当前运气 · ${qi.dateRange}`;
+  document.getElementById("contextBody").innerHTML = `
+    <div class="context-summary"><strong>${g.headline}</strong></div>
+    <div class="context-grid">
+      <div class="cg-item">
+        <span class="cg-label">身体容易</span>
+        <span class="cg-val">${g.bodySignals.slice(0,3).join('、')}</span>
+      </div>
+      <div class="cg-item">
+        <span class="cg-label">饮食方向</span>
+        <span class="cg-val eat">多吃 ${g.eatList.slice(0,4).join('、')}</span>
+        <span class="cg-val avoid">少碰 ${g.avoidList.slice(0,3).join('、')}</span>
+      </div>
+    </div>
+    ${g.climateNote ? `<p class="context-note">📍 ${g.climateNote}</p>` : ''}
+    ${g.yearNote ? `<p class="context-note">📅 ${g.yearNote}</p>` : ''}
+    ${g.interaction ? `<p class="context-note">💡 ${g.interaction}</p>` : ''}
+    <details class="context-detail">
+      <summary>运气原文</summary>
+      <div class="tcm-footnote">
+        ${wylq.pattern.ganZhi}年 · 岁运：${wylq.pattern.suiYun} · 司天：${wylq.pattern.siTian} · 在泉：${wylq.pattern.zaiQuan}<br>
+        ${qi.name} · 主气：${qi.zhuQi} · 客气：${qi.keQi}
+      </div>
+    </details>
+  `;
+
   // 药膳
   const cardsDiv = document.getElementById("dietCards");
   cardsDiv.innerHTML = "";
