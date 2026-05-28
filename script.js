@@ -211,17 +211,35 @@ const CONST_PLAIN = {
   '特禀质': '天生敏感——像对花粉灰尘都起反应的猫，需要"保护"',
 };
 
-// ========== 双城市选择器 ==========
-const cityList = Object.keys(cityData).sort();
-function fillCitySelect(id) {
+// ========== 省→市两级选择器 ==========
+const provinceList = Object.keys(provinceCities).sort();
+function fillProvinceSelect(id) {
   const sel = document.getElementById(id);
-  cityList.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; sel.appendChild(o); });
+  provinceList.forEach(p => { const o = document.createElement("option"); o.value = p; o.textContent = p; sel.appendChild(o); });
 }
-fillCitySelect("hometownSelect");
-fillCitySelect("citySelect");
+fillProvinceSelect("hometownProvince");
+fillProvinceSelect("currentProvince");
 
-const hometownSelect = document.getElementById("hometownSelect");
-const citySelect = document.getElementById("citySelect");
+function populateCitySelect(provinceId, cityId) {
+  const prov = document.getElementById(provinceId).value;
+  const citySel = document.getElementById(cityId);
+  citySel.innerHTML = "";
+  if (!prov || !provinceCities[prov]) {
+    citySel.appendChild(new Option("-- 先选省份 --", ""));
+    return;
+  }
+  citySel.appendChild(new Option("-- 选择城市 --", ""));
+  const cities = [...provinceCities[prov]].sort();
+  cities.forEach(c => {
+    if (cityData[c]) citySel.appendChild(new Option(c, c));
+  });
+}
+
+document.getElementById("hometownProvince").addEventListener("change", () => populateCitySelect("hometownProvince", "hometownCity"));
+document.getElementById("currentProvince").addEventListener("change", () => populateCitySelect("currentProvince", "currentCity"));
+
+const hometownCitySelect = document.getElementById("hometownCity");
+const currentCitySelect = document.getElementById("currentCity");
 let currentWeather = null, currentConflictAnalysis = null;
 
 // ========== 天气缓存 ==========
@@ -242,8 +260,8 @@ async function fetchWeather(lat, lon) {
 
 // ========== 城市选择联动 → 水土差异分析 ==========
 async function onCityChange() {
-  const hCity = hometownSelect.value;
-  const cCity = citySelect.value;
+  const hCity = hometownCitySelect.value;
+  const cCity = currentCitySelect.value;
   const hInfo = cityData[hCity];
   const cInfo = cityData[cCity];
 
@@ -284,8 +302,8 @@ async function onCityChange() {
   } else { analysisDiv.style.display = "none"; }
 }
 
-hometownSelect.addEventListener("change", onCityChange);
-citySelect.addEventListener("change", onCityChange);
+hometownCitySelect.addEventListener("change", onCityChange);
+currentCitySelect.addEventListener("change", onCityChange);
 
 // ========== 饮食偏好渲染 ==========
 const prefDefs = {
@@ -386,7 +404,7 @@ function scoreDiet(diet, analysis, constitution, prefs) {
 // ========== 推荐 ==========
 document.getElementById("submitBtn").addEventListener("click", function() {
   const con = determineConstitution();
-  const cCity = citySelect.value, hCity = hometownSelect.value;
+  const cCity = currentCitySelect.value, hCity = hometownCitySelect.value;
   const cInfo = cityData[cCity], hInfo = cityData[hCity];
   const prefs = collectPrefs();
 
