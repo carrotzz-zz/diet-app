@@ -871,3 +871,92 @@ function getCrossCultureFoods(homeRegion, currRegion) {
     foods: advice.foods,
   };
 }
+
+// ========== 环境因子诊断 ==========
+
+// 海拔 → TCM
+function diagnoseElevation(elevationMeters) {
+  if (elevationMeters == null) return null;
+  const e = elevationMeters;
+  if (e < 100) return { band:'平原', label:'平原', tcm:'气机平缓，湿气易聚', icon:'🏞️', level:'low' };
+  if (e < 500) return { band:'丘陵', label:'丘陵', tcm:'气机适中', icon:'⛰️', level:'low' };
+  if (e < 1500) return { band:'山地', label:'山地', tcm:'气机偏升，风气偏盛', icon:'🏔️', level:'medium' };
+  if (e < 3000) return { band:'高原', label:'高原', tcm:'氧薄气虚，寒燥明显', icon:'🗻', level:'high' };
+  return { band:'极高', label:'极高', tcm:'严重缺氧，寒凝血瘀', icon:'🏔️', level:'high' };
+}
+
+// 经纬度 → TCM
+function diagnoseLatLon(lat, lon) {
+  let latBand, latTcm;
+  if (lat < 25) { latBand = '南亚热带'; latTcm = '阳气外泄多，阴精易亏'; }
+  else if (lat < 35) { latBand = '中亚热带/北亚热带'; latTcm = '四季分明，阳气适中'; }
+  else if (lat < 45) { latBand = '暖温带/中温带'; latTcm = '阳气收敛，寒邪渐重'; }
+  else { latBand = '寒温带'; latTcm = '寒为主，阳气内藏深'; }
+
+  let lonBand, lonTcm;
+  if (lon < 105) { lonBand = '西部'; lonTcm = '日出晚，阳气升发偏迟'; }
+  else if (lon <= 115) { lonBand = '中部'; lonTcm = '适中'; }
+  else { lonBand = '东部沿海'; lonTcm = '日出早，海洋湿气影响'; }
+
+  return {
+    latBand, latTcm, lonBand, lonTcm,
+    combined: `${latBand} · ${lonBand} — ${latTcm}，${lonTcm}`,
+  };
+}
+
+// 空气质量 → TCM
+function diagnoseAirQuality(aqiData) {
+  if (!aqiData) return null;
+  const pm25 = aqiData.pm25;
+  const aqi = aqiData.aqi;
+  if (pm25 > 75 || aqi > 3) return { level:'high', label:'浊毒犯肺', tcm:'肺气不宣，浊毒犯肺 — 建议减少户外活动', icon:'😷' };
+  if ((pm25 >= 35 && pm25 <= 75) || aqi === 3) return { level:'medium', label:'微浊', tcm:'肺气轻微受影响 — 敏感人群注意防护', icon:'🌫️' };
+  return { level:'low', label:'空气清', tcm:'肺气通畅', icon:'🍃' };
+}
+
+// 水源分类
+function classifyWaterSource(cityName, cityInfo, elevationMeters) {
+  if (!cityInfo) return null;
+  const { province, region } = cityInfo;
+  const e = elevationMeters;
+
+  // 1. 冰川雪融水：青藏高原 + 川西高海拔
+  const glacierProvinces = ['西藏自治区','青海省'];
+  const glacierCities = ['阿坝','甘孜','凉山','康定','马尔康','西昌','德令哈','格尔木'];
+  const isGlacier = (glacierProvinces.includes(province) && (e == null || e > 2000)) ||
+    (province === '四川省' && glacierCities.some(c => (cityName || '').includes(c)) && (e == null || e > 2000)) ||
+    (province === '云南省' && e != null && e > 3000);
+  if (isGlacier) return { type:'冰川雪融水', label:'冰川雪融水', tcm:'寒性大、水质轻清 — 伤脾阳，宜温饮、少生冷', icon:'🧊' };
+
+  // 2. 沿海/感潮
+  const coastalCities = new Set([
+    '上海','天津','大连','丹东','营口','盘锦','葫芦岛','秦皇岛','唐山','沧州',
+    '青岛','烟台','威海','日照','东营','潍坊','连云港','盐城','南通',
+    '宁波','温州','舟山','台州','福州','厦门','莆田','泉州','漳州','宁德',
+    '广州','深圳','珠海','汕头','佛山','江门','湛江','茂名','惠州','汕尾','阳江','东莞','中山','潮州','揭阳',
+    '北海','防城港','钦州','海口','三亚','三沙','儋州',
+  ]);
+  if (coastalCities.has(cityName)) return { type:'沿海/感潮', label:'沿海/感潮', tcm:'偏咸湿 — 咸潮影响，助湿伤肾，宜清淡利水', icon:'🌊' };
+
+  // 3. 湖泊/水库水
+  const lakeCities = new Set([
+    '岳阳','九江','南昌','苏州','无锡','淮安','合肥','巢湖','昆明','大理',
+  ]);
+  if (lakeCities.has(cityName)) return { type:'湖泊/水库水', label:'湖泊/水库水', tcm:'偏阴、流动性差 — 静水助湿，宜化湿醒脾', icon:'🏞️' };
+
+  // 4. 大江大河中下游
+  const riverCities = new Set([
+    '重庆','宜昌','荆州','武汉','黄石','安庆','芜湖','南京','镇江','南通',
+    '兰州','银川','郑州','开封','济南','东营','滨州',
+  ]);
+  if (riverCities.has(cityName)) return { type:'大江大河中下游', label:'大江大河中下游', tcm:'偏浊、助湿 — 水质偏软，宜健脾渗湿', icon:'🌊' };
+
+  // 5. 山区溪流水：海拔 500+ 且在山地省份
+  const mountainProvinces = ['贵州省','云南省','四川省','湖南省','湖北省','陕西省','甘肃省','福建省','江西省','浙江省','安徽省','广西壮族自治区'];
+  if (e != null && e >= 500 && mountainProvinces.includes(province)) {
+    return { type:'山区溪流水', label:'山区溪流水', tcm:'偏寒、流动快 — 清冽，宜温热后饮用', icon:'⛰️' };
+  }
+
+  // 6. 默认：平原地下水
+  return { type:'平原地下水', label:'平原地下水', tcm:'偏硬、偏寒 — 矿物质多，宜烧开软饮', icon:'💧' };
+}

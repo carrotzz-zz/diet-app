@@ -240,7 +240,7 @@ document.getElementById("currentProvince").addEventListener("change", () => popu
 
 const hometownCitySelect = document.getElementById("hometownCity");
 const currentCitySelect = document.getElementById("currentCity");
-let currentWeather = null, currentConflictAnalysis = null;
+let currentWeather = null, currentElevation = null, currentAqi = null, currentConflictAnalysis = null;
 
 // ========== 天气缓存 ==========
 const weatherCache = {};
@@ -256,6 +256,38 @@ async function fetchWeather(lat, lon) {
     weatherCache[key] = { data: d, ts: Date.now() };
     return d;
   } catch(e) { console.warn("天气API:", e.message); return null; }
+}
+
+// ========== 海拔 API ==========
+const elevationCache = {};
+async function fetchElevation(lat, lon) {
+  const key = `${lat.toFixed(1)},${lon.toFixed(1)}`;
+  if (elevationCache[key] && (Date.now() - elevationCache[key].ts) < 30*60*1000) return elevationCache[key].data;
+  try {
+    const url = `https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error("Elevation API err");
+    const j = await r.json();
+    const data = j.elevation && j.elevation[0] != null ? j.elevation[0] : null;
+    elevationCache[key] = { data, ts: Date.now() };
+    return data;
+  } catch(e) { console.warn("海拔API:", e.message); return null; }
+}
+
+// ========== 空气质量 API ==========
+const aqiCache = {};
+async function fetchAirQuality(lat, lon) {
+  const key = `${lat.toFixed(1)},${lon.toFixed(1)}`;
+  if (aqiCache[key] && (Date.now() - aqiCache[key].ts) < 30*60*1000) return aqiCache[key].data;
+  try {
+    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,pm2_5,pm10`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error("AQI API err");
+    const j = await r.json();
+    const data = j.current ? { aqi: j.current.european_aqi, pm25: j.current.pm2_5, pm10: j.current.pm10 } : null;
+    aqiCache[key] = { data, ts: Date.now() };
+    return data;
+  } catch(e) { console.warn("空气质量API:", e.message); return null; }
 }
 
 // ========== 城市选择联动 → 水土差异分析 ==========
@@ -285,7 +317,11 @@ async function onCityChange() {
   const analysisDiv = document.getElementById("migrationAnalysis");
   if (!cInfo) { analysisDiv.style.display = "none"; return; }
 
-  currentWeather = await fetchWeather(cInfo.lat, cInfo.lon);
+  [currentWeather, currentElevation, currentAqi] = await Promise.all([
+    fetchWeather(cInfo.lat, cInfo.lon),
+    fetchElevation(cInfo.lat, cInfo.lon),
+    fetchAirQuality(cInfo.lat, cInfo.lon),
+  ]);
 
   // 天气 TCM 诊断
   let weatherBlock = "";
@@ -306,25 +342,66 @@ async function onCityChange() {
     weatherBlock = `<div class="ma-weather" style="color:#c03a2b;">⚠️ 天气数据获取失败，请检查网络</div>`;
   }
 
+  // 环境因素综合诊断（海拔、经纬度、空气、水源）
+  let envFactorsBlock = "";
+  const elevationDiag = diagnoseElevation(currentElevation);
+  const latlonDiag = diagnoseLatLon(cInfo.lat, cInfo.lon);
+  const aqiDiag = diagnoseAirQuality(currentAqi);
+  const waterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
+
+  const envItems = [];
+  if (elevationDiag) {
+    envItems.push(`<div class="ma-env-item">
+      <div class="ma-env-title">${elevationDiag.icon} 海拔 · ${elevationDiag.label}</div>
+      <div class="ma-env-detail">${currentElevation != null ? Math.round(currentElevation) + 'm · ' : ''}${elevationDiag.tcm}</div>
+    </div>`);
+  }
+  if (latlonDiag) {
+    envItems.push(`<div class="ma-env-item">
+      <div class="ma-env-title">🌐 经纬度</div>
+      <div class="ma-env-detail">${latlonDiag.combined}</div>
+    </div>`);
+  }
+  if (aqiDiag) {
+    const aqiExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
+    envItems.push(`<div class="ma-env-item">
+      <div class="ma-env-title">${aqiDiag.icon} 空气 · ${aqiDiag.label}</div>
+      <div class="ma-env-detail">${aqiExtra ? aqiExtra + ' · ' : ''}${aqiDiag.tcm}</div>
+    </div>`);
+  }
+  if (waterDiag) {
+    envItems.push(`<div class="ma-env-item">
+      <div class="ma-env-title">${waterDiag.icon} 水源 · ${waterDiag.label}</div>
+      <div class="ma-env-detail">${waterDiag.tcm}</div>
+    </div>`);
+  }
+  if (envItems.length > 0) {
+    envFactorsBlock = `<div class="ma-env-factors">
+      <div class="ma-env-head">🌍 环境因素</div>
+      <div class="ma-env-grid">${envItems.join('')}</div>
+    </div>`;
+  }
+
   if (hInfo && hInfo.region !== cInfo.region) {
     const conflict = getClimateConflict(hInfo.region, cInfo.region);
     if (conflict && conflict.level !== 'low') {
       analysisDiv.style.display = "block";
       analysisDiv.innerHTML = `
         ${weatherBlock}
+        ${envFactorsBlock}
         <div class="ma-head">🚨 ${conflict.title}</div>
         <p class="ma-body">${conflict.body}</p>
         <div class="ma-tips">${conflict.tips.map(t => `<span class="ma-tip">${t}</span>`).join('')}</div>`;
     } else {
       analysisDiv.style.display = "block";
-      analysisDiv.innerHTML = weatherBlock;
+      analysisDiv.innerHTML = weatherBlock + envFactorsBlock;
     }
   } else if (hInfo && hInfo.region === cInfo.region) {
     analysisDiv.style.display = "block";
-    analysisDiv.innerHTML = `${weatherBlock}<div class="ma-ok">✅ 家乡和现居地气候相近，水土适应的压力不大。</div>`;
+    analysisDiv.innerHTML = `${weatherBlock}${envFactorsBlock}<div class="ma-ok">✅ 家乡和现居地气候相近，水土适应的压力不大。</div>`;
   } else {
     analysisDiv.style.display = "block";
-    analysisDiv.innerHTML = weatherBlock;
+    analysisDiv.innerHTML = weatherBlock + envFactorsBlock;
   }
 }
 

@@ -217,6 +217,27 @@ select {
   font-size:11px; color:#aaa; line-height:1.5;
 }
 
+/* ===== 4因子环境诊断 ===== */
+.ma-env-factors {
+  background:#fafbf7; border-radius:8px; padding:10px 12px;
+  margin-bottom:10px; border:1px solid #e8ece0;
+}
+.ma-env-head {
+  font-size:12px; font-weight:bold; color:#7a8a6a; margin-bottom:8px; letter-spacing:0.5px;
+}
+.ma-env-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:6px;
+}
+.ma-env-item {
+  background:#fff; border-radius:6px; padding:8px 10px; border:1px solid #f0ece4;
+}
+.ma-env-title {
+  font-size:12px; font-weight:bold; color:#5a3e2b; margin-bottom:3px;
+}
+.ma-env-detail {
+  font-size:11px; color:#888; line-height:1.5;
+}
+
 /* ===== 药膳卡片 ===== */
 .refresh-hint { font-size:12px; color:#999; margin-bottom:8px; text-align:center; }
 .alert-diet-header {
