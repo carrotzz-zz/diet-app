@@ -287,14 +287,23 @@ async function onCityChange() {
 
   currentWeather = await fetchWeather(cInfo.lat, cInfo.lon);
 
-  // 天气状态行
-  let weatherLine = "";
+  // 天气 TCM 诊断
+  let weatherBlock = "";
   if (currentWeather) {
     const wCode = currentWeather.weatherCode;
-    const wDesc = wCode === 0 ? "☀️ 晴" : wCode <= 3 ? "⛅ 多云" : wCode <= 48 ? "🌫 雾/霾" : wCode <= 67 ? "🌧 雨" : wCode <= 77 ? "❄️ 雪" : wCode <= 82 ? "🌧 阵雨" : "⛈ 雷雨";
-    weatherLine = `<div class="ma-weather">${wDesc} · 🌡 ${currentWeather.temp}°C（体感${currentWeather.feelsLike}°C）· 💧 湿度${currentWeather.humidity}% · 🌬 风速${currentWeather.windSpeed}km/h</div>`;
+    const wIcon = wCode === 0 ? "☀️" : wCode <= 3 ? "⛅" : wCode <= 48 ? "🌫" : wCode <= 67 ? "🌧" : wCode <= 77 ? "❄️" : "⛈";
+    const diag = diagnoseWeather(currentWeather);
+    if (diag) {
+      const evilTags = diag.evils.map(e => `<span class="evil-tag ${e.name === '平和' ? 'evil-calm' : 'evil-active'}">${e.icon} ${e.name}</span>`).join(' ');
+      const impactLines = diag.impacts.map(i => `<div class="evil-impact">• ${i}</div>`).join('');
+      weatherBlock = `<div class="ma-weather-tcm">
+        <div class="tcm-weather-head">${wIcon} ${currentWeather.temp}°C · 体感${currentWeather.feelsLike}°C · 💧${currentWeather.humidity}% · 🌬${currentWeather.windSpeed}km/h</div>
+        <div class="tcm-evil-tags">${evilTags}</div>
+        <div class="tcm-impacts">${impactLines}</div>
+      </div>`;
+    }
   } else {
-    weatherLine = `<div class="ma-weather" style="color:#c03a2b;">⚠️ 天气数据获取失败，请检查网络</div>`;
+    weatherBlock = `<div class="ma-weather" style="color:#c03a2b;">⚠️ 天气数据获取失败，请检查网络</div>`;
   }
 
   if (hInfo && hInfo.region !== cInfo.region) {
@@ -302,20 +311,20 @@ async function onCityChange() {
     if (conflict && conflict.level !== 'low') {
       analysisDiv.style.display = "block";
       analysisDiv.innerHTML = `
-        ${weatherLine}
+        ${weatherBlock}
         <div class="ma-head">🚨 ${conflict.title}</div>
         <p class="ma-body">${conflict.body}</p>
         <div class="ma-tips">${conflict.tips.map(t => `<span class="ma-tip">${t}</span>`).join('')}</div>`;
     } else {
       analysisDiv.style.display = "block";
-      analysisDiv.innerHTML = weatherLine;
+      analysisDiv.innerHTML = weatherBlock;
     }
   } else if (hInfo && hInfo.region === cInfo.region) {
     analysisDiv.style.display = "block";
-    analysisDiv.innerHTML = `${weatherLine}<div class="ma-ok">✅ 家乡和现居地气候相近，水土适应的压力不大。</div>`;
+    analysisDiv.innerHTML = `${weatherBlock}<div class="ma-ok">✅ 家乡和现居地气候相近，水土适应的压力不大。</div>`;
   } else {
     analysisDiv.style.display = "block";
-    analysisDiv.innerHTML = weatherLine;
+    analysisDiv.innerHTML = weatherBlock;
   }
 }
 
@@ -503,10 +512,17 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   // 取前10进候选池，随机抽3，但保证至少1道本地菜
   const pool = merged.slice(0, Math.min(10, merged.length));
   shuffleArray(pool);
-  let results = pool.slice(0, 3);
-  // 如果抽出的3道里没有本地菜，强行把第一道换成最高分本地菜
-  if (localDishes.length > 0 && !results.some(isLocalDish)) {
-    results[0] = localDishes[0];
+  let results = pool.slice(0, Math.min(6, pool.length));
+  // 保证至少2道本地菜
+  if (localDishes.length >= 2 && results.filter(isLocalDish).length < 2) {
+    for (let li = 0; li < localDishes.length && results.filter(isLocalDish).length < 2; li++) {
+      if (!results.some(r => r.id === localDishes[li].id)) {
+        const replaceIdx = results.length - 1; // 替换最后一道
+        results[replaceIdx] = localDishes[li];
+      }
+    }
+  } else if (localDishes.length === 1 && !results.some(isLocalDish)) {
+    results[results.length - 1] = localDishes[0];
   }
 
   // 视图
@@ -587,13 +603,10 @@ document.getElementById("submitBtn").addEventListener("click", function() {
       return `<div class="alert-item"><span>${icon}</span> ${a.msg}</div>`;
     }).join('');
     guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>🌡 未来天气剧变预警</strong>${alertHTML}</div></div>`;
-    if (weatherAlertDiets.length > 0) {
-      guideHtml += `<div class="reason-item"><span class="reason-icon">🍲</span><div><strong>应对天气变化的推荐药膳</strong><p>${weatherAlertDiets.slice(0,4).map(d=>d.name).join('、')}</p></div></div>`;
-    }
   }
 
   if (a.weatherDeviation && a.weatherDeviation.hasDeviation && a.weatherDeviation.level === 'high') {
-    guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>天气反常——优先级最高</strong><p>${a.weatherDeviation.message}</p></div></div>`;
+    guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>天气反常</strong><p>${a.weatherDeviation.message}</p></div></div>`;
   }
   if (a.migrationConflict && a.migrationConflict.level !== 'low') {
     guideHtml += `<div class="reason-item"><span class="reason-icon">🚨</span><div><strong>水土不服</strong><p>${a.migrationConflict.body?.slice(0, 80)}...</p></div></div>`;
@@ -601,49 +614,63 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   if (a.constConflict) {
     guideHtml += `<div class="reason-item"><span class="reason-icon">🧬</span><div><strong>体质×环境</strong><p>${a.constConflict.note}</p></div></div>`;
   }
+  // 饮食适应：冲突 + 家乡胃合并
+  let foodAdaptHTML = '';
   if (a.foodClash) {
-    guideHtml += `<div class="reason-item"><span class="reason-icon">🍽</span><div><strong>饮食习惯冲突</strong><p>${a.foodClash.note}</p></div></div>`;
-    // 跨文化饮食推荐
-    if (crossCulture) {
-      guideHtml += `<div class="reason-item"><span class="reason-icon">🏠</span><div><strong>家乡胃 × 新水土：${crossCulture.principle}</strong><p>推荐：${crossCulture.foods.join('、')}</p></div></div>`;
-    }
+    foodAdaptHTML += `<p>${a.foodClash.note}</p>`;
   }
-  if (!a.foodClash && crossCulture) {
-    // 即使没有明显冲突，也提供家乡饮食适应建议
-    guideHtml += `<div class="reason-item"><span class="reason-icon">🏠</span><div><strong>家乡味道，适应当地：${crossCulture.principle}</strong><p>推荐：${crossCulture.foods.join('、')}</p></div></div>`;
+  if (crossCulture) {
+    foodAdaptHTML += `<p>🏠 <strong>家乡胃 × 新水土：</strong>${crossCulture.principle}</p><p>🥢 推荐家乡味：${crossCulture.foods.join('、')}</p>`;
   }
   if (prefWarnings.length > 0) {
-    prefWarnings.forEach(w => {
-      guideHtml += `<div class="reason-item warning"><span class="reason-icon">💡</span><div><strong>饮食偏好预警</strong><p>${w}</p></div></div>`;
-    });
+    prefWarnings.forEach(w => { foodAdaptHTML += `<p>💡 ${w}</p>`; });
+  }
+  if (foodAdaptHTML) {
+    guideHtml += `<div class="reason-item"><span class="reason-icon">🍽</span><div><strong>饮食适应指南</strong>${foodAdaptHTML}</div></div>`;
   }
   if (a.priorityEvils && a.priorityEvils.length > 0) {
-    guideHtml += `<div class="reason-item"><span class="reason-icon">🎯</span><div><strong>当前调理优先级</strong><p>${a.priorityEvils.map(e => `${e}邪`).join(' → ')}</p></div></div>`;
+    guideHtml += `<div class="reason-item"><span class="reason-icon">🎯</span><div><strong>调理优先级</strong><p>${a.priorityEvils.map(e => `${e}邪`).join(' → ')}</p></div></div>`;
   }
   if (!guideHtml) guideHtml = '<p>✅ 没有明显冲突，按季节和体质常规推荐即可</p>';
   document.getElementById("guideBody").innerHTML = guideHtml;
 
-  // 运气背景
+  // 当下时令 + 天气
   const e = emojiMap[qi.keInfo.evil] || '🌿';
-  let weatherContextHtml = '';
+  let weatherCardHtml = '', chartData = null;
   if (currentWeather) {
     const w = currentWeather;
     const wCode = w.weatherCode;
     const wDesc = wCode === 0 ? "☀️ 晴" : wCode <= 3 ? "⛅ 多云" : wCode <= 48 ? "🌫 雾/霾" : wCode <= 67 ? "🌧 雨" : wCode <= 77 ? "❄️ 雪" : wCode <= 82 ? "🌧 阵雨" : "⛈ 雷雨";
-    const daily = w.daily;
-    const forecastDays = daily ? daily.time.slice(1).map((t, i) => {
-      if (i >= 7) return ''; // only show next 7 in compact view
-      return `${t.slice(5)} ${daily.temperature_2m_max[i+1]?.toFixed(0)||'?'}/${daily.temperature_2m_min[i+1]?.toFixed(0)||'?'}°C`;
-    }).filter(Boolean).join(' · ') : '';
-    weatherContextHtml = `
-    <div class="cg-item"><span class="cg-label">🌡 当前天气</span><span class="cg-val">${wDesc} ${w.temp}°C（体感${w.feelsLike}°C）· 湿度${w.humidity}%</span></div>
-    <div class="cg-item"><span class="cg-label">📅 未来七日</span><span class="cg-val">${forecastDays || '暂无'}</span></div>`;
+    const feelsLike = w.feelsLike;
+    const diag = diagnoseWeather(w);
+    const evilSummary = diag ? diag.evils.filter(e=>e.name!=='平和').map(e=>e.name).join('·') : '';
+    weatherCardHtml = `<div class="weather-now">
+      <div class="wn-main"><span class="wn-icon">${wDesc.split(' ')[0]}</span><span class="wn-temp">${w.temp}°C</span></div>
+      <div class="wn-detail">体感 ${feelsLike}°C · 湿度 ${w.humidity}% · 风速 ${w.windSpeed}km/h</div>
+      ${evilSummary ? `<div class="wn-evil">⚡ ${evilSummary} 活跃</div>` : ''}
+    </div>`;
+
+    // 七日温度折线数据
+    if (w.daily && w.daily.time && w.daily.time.length >= 2) {
+      const n = Math.min(7, w.daily.time.length);
+      const days = [], highs = [], lows = [];
+      for (let i = 0; i < n; i++) {
+        if (w.daily.temperature_2m_max[i] == null || w.daily.temperature_2m_min[i] == null) continue;
+        days.push(w.daily.time[i].slice(5));
+        highs.push(w.daily.temperature_2m_max[i]);
+        lows.push(w.daily.temperature_2m_min[i]);
+      }
+      if (days.length >= 2) chartData = { days, highs, lows, today: w.temp };
+    }
   }
-  document.getElementById("contextHead").innerHTML = `${e} 当前运气 · ${qi.dateRange}`;
+  document.getElementById("contextHead").innerHTML = `${e} 当下时令 · ${qi.dateRange}`;
+  const chartHTML = chartData
+    ? `<div class="temp-chart"><canvas id="tempChart" width="460" height="180"></canvas></div>`
+    : (currentWeather ? '<div class="temp-chart"><p style="text-align:center;color:#999;font-size:12px;">温度数据不足</p></div>' : '');
   document.getElementById("contextBody").innerHTML = `
     <div class="context-summary"><strong>${g.headline}</strong></div>
+    ${weatherCardHtml}
     <div class="context-grid">
-      ${weatherContextHtml}
       <div class="cg-item"><span class="cg-label">身体容易</span><span class="cg-val">${g.bodySignals.slice(0,3).join('、')}</span></div>
       <div class="cg-item"><span class="cg-label">饮食方向</span><span class="cg-val eat">多吃 ${g.eatList.slice(0,4).join('、')}</span><span class="cg-val avoid">少碰 ${g.avoidList.slice(0,3).join('、')}</span></div>
     </div>
@@ -653,30 +680,71 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     <details class="context-detail"><summary>运气原文</summary><div class="tcm-footnote">${wylq.pattern.ganZhi}年 · 岁运：${wylq.pattern.suiYun} · 司天：${wylq.pattern.siTian} · 在泉：${wylq.pattern.zaiQuan}<br>${qi.name} · 主气：${qi.zhuQi} · 客气：${qi.keQi}</div></details>
   `;
 
+  // 绘制七日折线图
+  if (chartData) drawTempChart('tempChart', chartData);
+
   // 药膳
   const cardsDiv = document.getElementById("dietCards");
   cardsDiv.innerHTML = "";
   document.getElementById("refreshHint").style.display = "block";
 
-  if (results.length === 0) {
-    cardsDiv.innerHTML = "<p>😔 暂无匹配的药膳，请调整偏好。</p>";
-  } else {
-    results.forEach(d => {
-      const card = document.createElement("div");
-      card.className = "diet-card";
-      const score = d._score || 0;
-      const badge = score >= 6 ? '<span class="qi-badge hot">强烈推荐</span>' : score >= 3 ? '<span class="qi-badge">推荐</span>' : '';
-      card.innerHTML = `
-        <h3>🍲 ${d.name} ${badge} ${d.origin ? `<span style="font-size:12px;color:#8b5a2b;background:#faf0e0;padding:2px 6px;border-radius:8px;">📍 ${d.origin}</span>` : ''}</h3>
-        ${d.taste ? `<p class="taste-hint">👅 口感：${d.taste}</p>` : ''}
-        <p><strong>食材：</strong>${d.ingredients}</p>
-        <p><strong>做法：</strong>${d.method}</p>
-        <p><strong>功效：</strong>${d.effect}</p>
-        <div class="risk">⚠️ <strong>注意：</strong><br>${d.risk}<br>🚫 <strong>不适合：</strong>${d.ban}</div>`;
+  // 天气预警药膳（置顶）
+  if (weatherAlertDiets.length > 0 && weatherAlerts.length > 0) {
+    const alertSection = document.createElement("div");
+    alertSection.innerHTML = `<div class="alert-diet-header">🌡 天气预警 · 应急推荐</div>`;
+    cardsDiv.appendChild(alertSection);
+    // 去重：排除已出现在主推荐里的
+    const resultIds = new Set(results.map(d => d.id));
+    const alertUnique = weatherAlertDiets.filter(d => !resultIds.has(d.id)).slice(0, 3);
+    alertUnique.forEach(d => {
+      const card = renderDietCard(d, true);
       cardsDiv.appendChild(card);
+    });
+    if (alertUnique.length === 0 && weatherAlertDiets.length > 0) {
+      // 全部跟主推荐重复，取前2
+      weatherAlertDiets.slice(0, 2).forEach(d => {
+        cardsDiv.appendChild(renderDietCard(d, true));
+      });
+    }
+  }
+
+  // 主推荐
+  if (results.length === 0) {
+    cardsDiv.innerHTML += "<p>😔 暂无匹配的药膳，请调整偏好。</p>";
+  } else {
+    const mainHeader = document.createElement("div");
+    mainHeader.innerHTML = `<div class="alert-diet-header" style="background:#fafaf7;color:#5a3e2b;">🍲 体质调理推荐</div>`;
+    cardsDiv.appendChild(mainHeader);
+    results.forEach(d => {
+      cardsDiv.appendChild(renderDietCard(d, false));
+    });
+  }
+
+  // 兜底：全部结果不足3道，追加季节通用款
+  if (cardsDiv.children.length < 3) {
+    const fallback = diets.filter(d => d.season.includes(currentSeason) && !d.avoid.includes(con.primary)).slice(0, 3);
+    fallback.forEach(d => {
+      if (!results.some(r => r.id === d.id)) {
+        cardsDiv.appendChild(renderDietCard(d, false));
+      }
     });
   }
 });
+
+function renderDietCard(d, isAlert) {
+  const card = document.createElement("div");
+  card.className = "diet-card" + (isAlert ? " diet-alert" : "");
+  const score = d._score || 0;
+  const badge = score >= 6 ? '<span class="qi-badge hot">强烈推荐</span>' : score >= 3 ? '<span class="qi-badge">推荐</span>' : '';
+  card.innerHTML = `
+    <h3>🍲 ${d.name} ${badge} ${d.origin ? `<span style="font-size:12px;color:#8b5a2b;background:#faf0e0;padding:2px 6px;border-radius:8px;">📍 ${d.origin}</span>` : ''}</h3>
+    ${d.taste ? `<p class="taste-hint">👅 口感：${d.taste}</p>` : ''}
+    <p><strong>食材：</strong>${d.ingredients}</p>
+    <p><strong>做法：</strong>${d.method}</p>
+    <p><strong>功效：</strong>${d.effect}</p>
+    <div class="risk">⚠️ <strong>注意：</strong><br>${d.risk}<br>🚫 <strong>不适合：</strong>${d.ban}</div>`;
+  return card;
+}
 
 // ========== 分数条 ==========
 function renderScoreBars(scores) {
@@ -689,6 +757,95 @@ function renderScoreBars(scores) {
   }).join('');
 }
 
+// ========== 七日温度折线图 ==========
+function drawTempChart(canvasId, data) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 20, right: 16, bottom: 24, left: 32 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+  const n = data.days.length;
+
+  // 计算温度范围
+  const allTemps = [...data.highs, ...data.lows, data.today];
+  let minT = Math.floor(Math.min(...allTemps) / 5) * 5;
+  let maxT = Math.ceil(Math.max(...allTemps) / 5) * 5;
+  if (maxT - minT < 10) { minT -= 2; maxT += 2; }
+
+  const x = (i) => pad.left + (i / (n - 1)) * pw;
+  const y = (t) => pad.top + ph - ((t - minT) / (maxT - minT)) * ph;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 背景虚线
+  ctx.strokeStyle = '#e8e4dc';
+  ctx.lineWidth = 1;
+  for (let t = minT; t <= maxT; t += 5) {
+    const ty = y(t);
+    ctx.beginPath(); ctx.moveTo(pad.left, ty); ctx.lineTo(W - pad.right, ty); ctx.stroke();
+    ctx.fillStyle = '#999'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(t + '°', pad.left - 4, ty + 4);
+  }
+
+  // 低温线
+  ctx.strokeStyle = '#5b9bd5'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) { const px = x(i), py = y(data.lows[i]); i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+  ctx.stroke();
+
+  // 高温线
+  ctx.strokeStyle = '#e87a3a'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) { const px = x(i), py = y(data.highs[i]); i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+  ctx.stroke();
+
+  // 填充区域
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) ctx.lineTo(x(i), y(data.lows[i]));
+  for (let i = n - 1; i >= 0; i--) ctx.lineTo(x(i), y(data.highs[i]));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(232,122,58,0.06)';
+  ctx.fill();
+
+  // 数据点 + 标签
+  const markHigh = n <= 4 ? n : 1; // 少于4天全标，否则只标首尾+最高最低
+  const hiIdx = data.highs.indexOf(Math.max(...data.highs));
+  const loIdx = data.lows.indexOf(Math.min(...data.lows));
+  const markSet = new Set([0, n-1, hiIdx, loIdx]);
+  for (let i = 0; i < n; i++) {
+    // 高温点
+    ctx.beginPath(); ctx.arc(x(i), y(data.highs[i]), 2.5, 0, Math.PI*2); ctx.fillStyle = '#e87a3a'; ctx.fill();
+    // 低温点
+    ctx.beginPath(); ctx.arc(x(i), y(data.lows[i]), 2.5, 0, Math.PI*2); ctx.fillStyle = '#5b9bd5'; ctx.fill();
+    // 日期标签
+    ctx.fillStyle = '#888'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(data.days[i], x(i), H - 4);
+    // 温标
+    if (n <= 7 || markSet.has(i)) {
+      ctx.fillStyle = '#e87a3a'; ctx.textAlign = 'center';
+      ctx.fillText(data.highs[i].toFixed(0) + '°', x(i), y(data.highs[i]) - 6);
+      if (n <= 4) {
+        ctx.fillStyle = '#5b9bd5';
+        ctx.fillText(data.lows[i].toFixed(0) + '°', x(i), y(data.lows[i]) + 12);
+      }
+    }
+  }
+
+  // 今天标记
+  const todayX = x(0), todayY = y(data.today);
+  ctx.beginPath(); ctx.arc(todayX, todayY, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.strokeStyle = '#c03a2b'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(todayX - 3, todayY - 3); ctx.lineTo(todayX + 3, todayY + 3);
+  ctx.moveTo(todayX + 3, todayY - 3); ctx.lineTo(todayX - 3, todayY + 3);
+  ctx.strokeStyle = '#c03a2b'; ctx.stroke();
+  // 今天标签
+  ctx.fillStyle = '#c03a2b'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('今天 ' + data.today.toFixed(0) + '°', todayX + 8, todayY + 4);
+}
+
 // ========== 随机 ==========
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -696,6 +853,64 @@ function shuffleArray(arr) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 }
+
+// ========== 本地留存 ==========
+const LS_KEY = 'wuxiangtie_data';
+function saveToLocal() {
+  const data = {
+    hometownProvince: document.getElementById("hometownProvince").value,
+    hometownCity: hometownCitySelect.value,
+    currentProvince: document.getElementById("currentProvince").value,
+    currentCity: currentCitySelect.value,
+    sliders: {},
+    prefs: {},
+  };
+  document.querySelectorAll('input[type="range"]').forEach(s => {
+    if (parseInt(s.value) !== 1) data.sliders[s.id] = parseInt(s.value);
+  });
+  document.querySelectorAll('.pref-options input:checked').forEach(c => {
+    if (!data.prefs[c.name]) data.prefs[c.name] = [];
+    data.prefs[c.name].push(c.value);
+  });
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function restoreFromLocal() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.hometownProvince) {
+      document.getElementById("hometownProvince").value = data.hometownProvince;
+      populateCitySelect("hometownProvince", "hometownCity");
+      setTimeout(() => { if (data.hometownCity) { hometownCitySelect.value = data.hometownCity; onCityChange(); } }, 100);
+    }
+    if (data.currentProvince) {
+      document.getElementById("currentProvince").value = data.currentProvince;
+      populateCitySelect("currentProvince", "currentCity");
+      setTimeout(() => { if (data.currentCity) { currentCitySelect.value = data.currentCity; onCityChange(); } }, 200);
+    }
+    if (data.sliders) {
+      Object.entries(data.sliders).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+      });
+    }
+    if (data.prefs) {
+      Object.entries(data.prefs).forEach(([name, vals]) => {
+        vals.forEach(v => {
+          const cb = document.querySelector(`input[name="${name}"][value="${v}"]`);
+          if (cb) cb.checked = true;
+        });
+      });
+    }
+  } catch(e) {}
+}
+// 保存：城市变动、滑块变动、偏好点击
+[hometownCitySelect, currentCitySelect].forEach(s => s.addEventListener("change", saveToLocal));
+document.querySelectorAll('input[type="range"]').forEach(s => s.addEventListener("change", saveToLocal));
+document.querySelectorAll('.pref-options').forEach(div => div.addEventListener("click", () => setTimeout(saveToLocal, 50)));
+// 首次加载恢复
+restoreFromLocal();
 
 // ========== 返回 ==========
 document.getElementById("backBtn").addEventListener("click", function() {

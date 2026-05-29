@@ -49,6 +49,24 @@ h2 {
   font-size:13px; color:#5a3e2b; background:#e8f5e9;
   padding:6px 10px; border-radius:8px; margin-bottom:8px; line-height:1.5;
 }
+.ma-weather-tcm {
+  background:linear-gradient(135deg,#f0f7f0,#e8f0e8);
+  border-radius:10px; padding:12px; margin-bottom:10px;
+  border:1px solid #c8dcc8;
+}
+.tcm-weather-head {
+  font-size:14px; font-weight:bold; color:#3e5a3e; margin-bottom:8px;
+}
+.tcm-evil-tags { margin-bottom:6px; }
+.evil-tag {
+  display:inline-block; padding:3px 10px; border-radius:12px;
+  font-size:13px; font-weight:bold; margin-right:6px;
+}
+.evil-tag.evil-active { background:#ffe8e0; color:#c03a2b; }
+.evil-tag.evil-calm { background:#e0f0e0; color:#5a9e6f; }
+.evil-impact {
+  font-size:12px; color:#666; line-height:1.7;
+}
 
 /* ===== 体质测评 ===== */
 .const-group { margin-bottom:8px; }
@@ -106,14 +124,14 @@ select {
 
 /* ===== 饮食偏好 ===== */
 .pref-group { margin-bottom:10px; }
-.pref-label { font-size:13px; font-weight:bold; color:#5a3e2b; margin-bottom:4px; }
-.pref-options { display:flex; flex-wrap:wrap; gap:5px; }
+.pref-label { font-size:13px; font-weight:bold; color:#5a3e2b; margin-bottom:6px; }
+.pref-options { display:flex; flex-wrap:wrap; gap:6px; }
 .pref-btn {
-  cursor:pointer; position:relative;
+  cursor:pointer; position:relative; flex:0 0 auto;
 }
 .pref-btn input { position:absolute; opacity:0; width:0; height:0; }
 .pref-btn span {
-  display:inline-block; padding:5px 12px; border-radius:16px;
+  display:inline-block; padding:6px 14px; border-radius:16px; min-width:60px; text-align:center;
   font-size:13px; background:#fff; border:1.5px solid #e0d6c8;
   color:#7a6a5a; transition:all 0.15s;
 }
@@ -169,6 +187,22 @@ select {
 .context-summary { font-size:14px; color:#5a3e2b; margin-bottom:8px; }
 .context-summary strong { color:#2d5a27; }
 .context-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+
+/* 天气卡片 */
+.weather-now {
+  background:linear-gradient(135deg,#e8f5e9,#f1f8e9);
+  border-radius:10px; padding:12px; margin-bottom:12px;
+  text-align:center;
+}
+.wn-main { display:flex; align-items:center; justify-content:center; gap:8px; }
+.wn-icon { font-size:28px; }
+.wn-temp { font-size:32px; font-weight:bold; color:#3e5a3e; }
+.wn-detail { font-size:12px; color:#666; margin-top:4px; }
+.wn-evil { font-size:13px; color:#c03a2b; margin-top:6px; font-weight:bold; background:rgba(192,58,43,0.08); display:inline-block; padding:2px 10px; border-radius:10px; }
+
+/* 温度折线图 */
+.temp-chart { margin:8px 0 12px; text-align:center; }
+.temp-chart canvas { max-width:100%; height:auto; }
 .cg-item { background:#fafaf7; padding:8px 10px; border-radius:6px; font-size:12px; }
 .cg-label { display:block; color:#999; margin-bottom:3px; font-weight:bold; }
 .cg-val { color:#555; line-height:1.5; }
@@ -185,6 +219,12 @@ select {
 
 /* ===== 药膳卡片 ===== */
 .refresh-hint { font-size:12px; color:#999; margin-bottom:8px; text-align:center; }
+.alert-diet-header {
+  font-size:14px; font-weight:bold; color:#c03a2b;
+  background:#fff9f0; padding:8px 12px; border-radius:8px;
+  margin-bottom:8px; text-align:center;
+}
+.diet-card.diet-alert { border-left:3px solid #e65100; }
 .diet-card {
   background:white; border-radius:12px; padding:14px;
   margin-bottom:12px; box-shadow:0 3px 10px rgba(0,0,0,0.07);

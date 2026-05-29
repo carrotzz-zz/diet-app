@@ -341,6 +341,59 @@ function getWeatherPlain(weather, keEvil) {
   return { summary: parts.join(' · '), deviation };
 }
 
+// 天气 → 邪气诊断 + 身体影响（选城即可见）
+function diagnoseWeather(weather) {
+  if (!weather) return null;
+  const t = weather.temp;
+  const h = weather.humidity;
+  const w = weather.windSpeed;
+  const code = weather.weatherCode;
+  const evils = [];
+  const impacts = [];
+
+  // 温度 → 邪气
+  if (t >= 35) { evils.push({ name:'暑邪', level:'high', icon:'☀️' }); impacts.push('暑热伤津，容易口渴烦躁、头昏乏力'); }
+  else if (t >= 30) { evils.push({ name:'热邪', level:'medium', icon:'🔥' }); impacts.push('偏热易出汗，津液流失加快'); }
+  else if (t >= 25) { /* 舒适，无邪 */ }
+  else if (t >= 10) { evils.push({ name:'寒邪', level:'low', icon:'🍃' }); impacts.push('偏凉，阳气开始收敛，注意保暖'); }
+  else if (t >= 0) { evils.push({ name:'寒邪', level:'medium', icon:'❄️' }); impacts.push('寒冷伤阳，手脚易凉、关节易僵'); }
+  else { evils.push({ name:'寒邪', level:'high', icon:'🧊' }); impacts.push('严寒逼人，阳气大伤，务必暖身防冻'); }
+
+  // 湿度 → 邪气
+  if (h >= 80) { evils.push({ name:'湿邪', level:'high', icon:'💧' }); impacts.push('湿气困脾，身体沉重、胃口差、舌苔厚腻'); }
+  else if (h >= 65) { evils.push({ name:'湿邪', level:'medium', icon:'🌧' }); impacts.push('湿度偏高，湿邪渐生，痰湿体质需留意'); }
+  else if (h <= 30) { evils.push({ name:'燥邪', level:'medium', icon:'🍂' }); impacts.push('空气干燥，肺和皮肤失润，口干咽干'); }
+
+  // 风速 → 风邪（风为百病之长）
+  if (w >= 25) { evils.push({ name:'风邪', level:'high', icon:'🌬' }); impacts.push('风势强劲，风邪易携寒/热侵入，注意防风'); }
+  else if (w >= 15) { evils.push({ name:'风邪', level:'medium', icon:'🍃' }); impacts.push('风邪活跃，出门多带件外套挡风'); }
+
+  // 天气码 → 补充邪气
+  if (code >= 51 && code <= 67) { // 雨
+    if (!evils.find(e => e.name === '湿邪')) evils.push({ name:'湿邪', level:'medium', icon:'🌧' });
+    impacts.push('雨天湿气弥漫，关节和脾胃受影响');
+  }
+  if (code >= 71 && code <= 77) { // 雪
+    if (!evils.find(e => e.name === '寒邪')) evils.push({ name:'寒邪', level:'high', icon:'❄️' });
+    impacts.push('雪天寒湿交加，寒邪从脚底入侵');
+  }
+
+  // 若无邪气 → 平和
+  if (evils.length === 0) {
+    return { evils: [{ name:'平和', level:'low', icon:'✅' }], impacts: ['当前天气温和，无明显邪气困扰'], summary: '天气平和，正气存内' };
+  }
+
+  // 去重
+  const uniqueEvils = evils.filter((e, i) => evils.findIndex(x => x.name === e.name) === i);
+  const uniqueImpacts = [...new Set(impacts)];
+
+  return {
+    evils: uniqueEvils,
+    impacts: uniqueImpacts.slice(0, 3),
+    summary: uniqueEvils.map(e => e.name.replace('邪','')).join('、') + '偏盛',
+  };
+}
+
 // ========== 主函数：生成大白话指南 ==========
 function getPlainGuidance(wylq, weather, cityInfo) {
   const qi = wylq.currentQi;
@@ -793,9 +846,13 @@ function getCrossCultureFoods(homeRegion, currRegion) {
   const homeCulture = REGION_FOOD_CULTURE[homeRegion];
   if (!homeCulture) return null;
 
-  // 找到匹配的饮食特征
-  const tasteKey = Object.keys(CROSS_CULTURE_FOODS).find(k => homeCulture.taste.includes(k) || k.includes(homeCulture.taste.slice(0,2)));
-  const cultureData = CROSS_CULTURE_FOODS[tasteKey] || CROSS_CULTURE_FOODS['咸香']; // fallback
+  // 精确匹配优先，避免 '咸、酸辣' 误匹配到 '咸、油大'
+  const keys = Object.keys(CROSS_CULTURE_FOODS);
+  let tasteKey = keys.find(k => k === homeCulture.taste);
+  if (!tasteKey) {
+    tasteKey = keys.find(k => homeCulture.taste.includes(k) || k.includes(homeCulture.taste));
+  }
+  const cultureData = CROSS_CULTURE_FOODS[tasteKey] || CROSS_CULTURE_FOODS['咸香'];
 
   // 判断目标气候的主要挑战
   let challenge = '湿'; // default
