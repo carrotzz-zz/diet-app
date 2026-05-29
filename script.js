@@ -487,6 +487,16 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   candidates.forEach(d => { d._score = scoreDiet(d, currentConflictAnalysis, con, prefs); });
   candidates.sort((a, b) => b._score - a._score);
 
+  // 家乡胃加分：跨文化推荐的食物名匹配到食谱
+  if (crossCulture) {
+    const ccFoods = crossCulture.foods.map(f => f.replace(/[（(].+[）)]/g,'').trim());
+    candidates.forEach(d => {
+      const nameNoSuffix = d.name.replace(/[（(].+[）)]/g,'').trim();
+      if (ccFoods.some(f => nameNoSuffix.includes(f) || f.includes(nameNoSuffix))) d._score += 3;
+      if (d.origin && hRegion && d.origin.includes(hRegion.split(/[东西南北中]/)[0])) d._score += 2;
+    });
+  }
+
   // 本地菜优先：origin 匹配当前城市省份或气候区
   const lp = cInfo.province || '';
   const lr = cInfo.region || '';
@@ -614,19 +624,10 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   if (a.constConflict) {
     guideHtml += `<div class="reason-item"><span class="reason-icon">🧬</span><div><strong>体质×环境</strong><p>${a.constConflict.note}</p></div></div>`;
   }
-  // 饮食适应：冲突 + 家乡胃合并
-  let foodAdaptHTML = '';
-  if (a.foodClash) {
-    foodAdaptHTML += `<p>${a.foodClash.note}</p>`;
-  }
-  if (crossCulture) {
-    foodAdaptHTML += `<p>🏠 <strong>家乡胃 × 新水土：</strong>${crossCulture.principle}</p><p>🥢 推荐家乡味：${crossCulture.foods.join('、')}</p>`;
-  }
   if (prefWarnings.length > 0) {
-    prefWarnings.forEach(w => { foodAdaptHTML += `<p>💡 ${w}</p>`; });
-  }
-  if (foodAdaptHTML) {
-    guideHtml += `<div class="reason-item"><span class="reason-icon">🍽</span><div><strong>饮食适应指南</strong>${foodAdaptHTML}</div></div>`;
+    prefWarnings.forEach(w => {
+      guideHtml += `<div class="reason-item warning"><span class="reason-icon">💡</span><div><strong>饮食偏好预警</strong><p>${w}</p></div></div>`;
+    });
   }
   if (a.priorityEvils && a.priorityEvils.length > 0) {
     guideHtml += `<div class="reason-item"><span class="reason-icon">🎯</span><div><strong>调理优先级</strong><p>${a.priorityEvils.map(e => `${e}邪`).join(' → ')}</p></div></div>`;
@@ -706,6 +707,14 @@ document.getElementById("submitBtn").addEventListener("click", function() {
         cardsDiv.appendChild(renderDietCard(d, true));
       });
     }
+  }
+
+  // 家乡味说明
+  if (crossCulture && !(hRegion === cRegion)) {
+    const ctxNote = document.createElement("div");
+    const clashNote = a.foodClash ? a.foodClash.note : '';
+    ctxNote.innerHTML = `<div class="cross-culture-note">🏠 ${crossCulture.principle}${clashNote ? '<br><span style="font-size:11px;color:#999;">'+clashNote+'</span>' : ''}</div>`;
+    cardsDiv.appendChild(ctxNote);
   }
 
   // 主推荐
