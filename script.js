@@ -443,6 +443,7 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   }
 
   const hRegion = hInfo.region, cRegion = cInfo.region;
+  const crossCulture = getCrossCultureFoods(hRegion, cRegion);
 
   // 冲突分析
   const fullAnalysis = getConflictAnalysis(hRegion, cRegion, con.primary, currentWeather, wylq);
@@ -574,9 +575,6 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     bannerHTML = `<div class="migrant-banner"><div class="mb-route">🏠 <strong>${hCity}</strong> &nbsp;→&nbsp; 📍 <strong>${cCity}</strong></div><div class="mb-note">${diffNote}</div></div>`;
   }
   document.getElementById("migrantBanner").innerHTML = bannerHTML;
-
-  // ===== 跨文化饮食推荐 =====
-  const crossCulture = getCrossCultureFoods(hRegion, cRegion);
 
   // 体质画像
   if (con.isBalanced) {
