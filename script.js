@@ -346,6 +346,7 @@ async function onCityChange() {
   // 环境因素两地对比（海拔、经纬度、水源、空气）
   let envFactorsBlock = "";
   if (hInfo && cInfo && hCity !== cCity) {
+    try {
     const hElevDiag = diagnoseElevation(hometownElevation);
     const cElevDiag = diagnoseElevation(currentElevation);
     const hLatlonDiag = diagnoseLatLon(hInfo.lat, hInfo.lon);
@@ -398,11 +399,12 @@ async function onCityChange() {
       </div>`);
     }
 
-    // 水源详细解释（仅当两地水源不同时）
+    // 水源详细解释
     let waterNoteHTML = '';
-    if (hWaterDiag && cWaterDiag && hWaterDiag.type !== cWaterDiag.type) {
+    if (hWaterDiag && cWaterDiag) {
+      const sameType = hWaterDiag.type === cWaterDiag.type;
       waterNoteHTML = `<div class="ma-cmp-water-note">
-        <div class="ma-cmp-water-label">💧 两地水源差异</div>
+        <div class="ma-cmp-water-label">💧 ${sameType ? '两地水源（相同）' : '两地水源差异'}</div>
         <div class="ma-cmp-water-item">🏠 ${hCity}（${hWaterDiag.label}）：${hWaterDiag.tcm}</div>
         <div class="ma-cmp-water-item">📍 ${cCity}（${cWaterDiag.label}）：${cWaterDiag.tcm}</div>
       </div>`;
@@ -418,6 +420,10 @@ async function onCityChange() {
       ${rows.join('')}
       ${waterNoteHTML}
     </div>`;
+    } catch(e) {
+      console.error('环境对比渲染失败:', e);
+      envFactorsBlock = '';
+    }
   } else if (cInfo) {
     // 未选家乡或同城：只展示现居地
     const cElevDiag = diagnoseElevation(currentElevation);
