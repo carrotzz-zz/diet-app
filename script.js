@@ -240,7 +240,7 @@ document.getElementById("currentProvince").addEventListener("change", () => popu
 
 const hometownCitySelect = document.getElementById("hometownCity");
 const currentCitySelect = document.getElementById("currentCity");
-let currentWeather = null, currentElevation = null, hometownElevation = null, currentAqi = null, currentConflictAnalysis = null;
+let currentWeather = null, currentElevation = null, hometownElevation = null, currentAqi = null, hometownAqi = null, currentConflictAnalysis = null;
 
 // ========== 天气缓存 ==========
 const weatherCache = {};
@@ -317,11 +317,12 @@ async function onCityChange() {
   const analysisDiv = document.getElementById("migrationAnalysis");
   if (!cInfo) { analysisDiv.style.display = "none"; return; }
 
-  [currentWeather, currentElevation, hometownElevation, currentAqi] = await Promise.all([
+  [currentWeather, currentElevation, hometownElevation, currentAqi, hometownAqi] = await Promise.all([
     fetchWeather(cInfo.lat, cInfo.lon),
     fetchElevation(cInfo.lat, cInfo.lon),
     hInfo ? fetchElevation(hInfo.lat, hInfo.lon) : Promise.resolve(null),
     fetchAirQuality(cInfo.lat, cInfo.lon),
+    hInfo ? fetchAirQuality(hInfo.lat, hInfo.lon) : Promise.resolve(null),
   ]);
 
   // 天气 TCM 诊断
@@ -353,7 +354,8 @@ async function onCityChange() {
     const cLatlonDiag = diagnoseLatLon(cInfo.lat, cInfo.lon);
     const hWaterDiag = classifyWaterSource(hCity, hInfo, hometownElevation);
     const cWaterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
-    const aqiDiag = diagnoseAirQuality(currentAqi);
+    const hAqiDiag = diagnoseAirQuality(hometownAqi);
+    const cAqiDiag = diagnoseAirQuality(currentAqi);
 
     const rows = [];
 
@@ -389,13 +391,15 @@ async function onCityChange() {
       </div>`);
     }
 
-    // 空气（仅现居地）
-    if (aqiDiag) {
-      const aqiExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
-      rows.push(`<div class="ma-cmp-row">
-        <div class="ma-cmp-label">${aqiDiag.icon} 空气</div>
-        <div class="ma-cmp-home" style="color:#bbb;">—</div>
-        <div class="ma-cmp-current">${aqiExtra ? aqiExtra + '<br>' : ''}${aqiDiag.label}</div>
+    // 空气对比
+    if (hAqiDiag || cAqiDiag) {
+      const hExtra = hometownAqi ? `PM2.5 ${hometownAqi.pm25 != null ? Math.round(hometownAqi.pm25) : '?'}μg/m³` : '';
+      const cExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
+      const aqiDiff = hAqiDiag && cAqiDiag && hAqiDiag.level !== cAqiDiag.level;
+      rows.push(`<div class="ma-cmp-row${aqiDiff ? ' ma-cmp-diff' : ''}">
+        <div class="ma-cmp-label">😷 空气</div>
+        <div class="ma-cmp-home">${hAqiDiag ? (hExtra ? hExtra + '<br>' : '') + hAqiDiag.label : '—'}</div>
+        <div class="ma-cmp-current">${cAqiDiag ? (cExtra ? cExtra + '<br>' : '') + cAqiDiag.label : '—'}</div>
       </div>`);
     }
 
