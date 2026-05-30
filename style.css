@@ -276,6 +276,9 @@ select {
   margin-top:6px; padding:8px 10px; background:#fff; border-radius:6px;
   border:1px solid #e8ece0;
 }
+.ma-cmp-water-label {
+  font-size:12px; font-weight:bold; color:#5a3e2b; margin-bottom:4px;
+}
 .ma-cmp-water-item {
   font-size:11px; color:#888; line-height:1.5; margin-bottom:2px;
 }

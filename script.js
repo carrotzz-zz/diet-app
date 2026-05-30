@@ -402,8 +402,9 @@ async function onCityChange() {
     let waterNoteHTML = '';
     if (hWaterDiag && cWaterDiag && hWaterDiag.type !== cWaterDiag.type) {
       waterNoteHTML = `<div class="ma-cmp-water-note">
-        <div class="ma-cmp-water-item">🏠 ${hCity}：${hWaterDiag.tcm}</div>
-        <div class="ma-cmp-water-item">📍 ${cCity}：${cWaterDiag.tcm}</div>
+        <div class="ma-cmp-water-label">💧 两地水源差异</div>
+        <div class="ma-cmp-water-item">🏠 ${hCity}（${hWaterDiag.label}）：${hWaterDiag.tcm}</div>
+        <div class="ma-cmp-water-item">📍 ${cCity}（${cWaterDiag.label}）：${cWaterDiag.tcm}</div>
       </div>`;
     }
 
