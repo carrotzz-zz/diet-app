@@ -240,7 +240,7 @@ document.getElementById("currentProvince").addEventListener("change", () => popu
 
 const hometownCitySelect = document.getElementById("hometownCity");
 const currentCitySelect = document.getElementById("currentCity");
-let currentWeather = null, currentElevation = null, currentAqi = null, currentConflictAnalysis = null;
+let currentWeather = null, currentElevation = null, hometownElevation = null, currentAqi = null, currentConflictAnalysis = null;
 
 // ========== 天气缓存 ==========
 const weatherCache = {};
@@ -317,9 +317,10 @@ async function onCityChange() {
   const analysisDiv = document.getElementById("migrationAnalysis");
   if (!cInfo) { analysisDiv.style.display = "none"; return; }
 
-  [currentWeather, currentElevation, currentAqi] = await Promise.all([
+  [currentWeather, currentElevation, hometownElevation, currentAqi] = await Promise.all([
     fetchWeather(cInfo.lat, cInfo.lon),
     fetchElevation(cInfo.lat, cInfo.lon),
+    hInfo ? fetchElevation(hInfo.lat, hInfo.lon) : Promise.resolve(null),
     fetchAirQuality(cInfo.lat, cInfo.lon),
   ]);
 
@@ -342,44 +343,98 @@ async function onCityChange() {
     weatherBlock = `<div class="ma-weather" style="color:#c03a2b;">⚠️ 天气数据获取失败，请检查网络</div>`;
   }
 
-  // 环境因素综合诊断（海拔、经纬度、空气、水源）
+  // 环境因素两地对比（海拔、经纬度、水源、空气）
   let envFactorsBlock = "";
-  const elevationDiag = diagnoseElevation(currentElevation);
-  const latlonDiag = diagnoseLatLon(cInfo.lat, cInfo.lon);
-  const aqiDiag = diagnoseAirQuality(currentAqi);
-  const waterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
+  if (hInfo && cInfo && hCity !== cCity) {
+    const hElevDiag = diagnoseElevation(hometownElevation);
+    const cElevDiag = diagnoseElevation(currentElevation);
+    const hLatlonDiag = diagnoseLatLon(hInfo.lat, hInfo.lon);
+    const cLatlonDiag = diagnoseLatLon(cInfo.lat, cInfo.lon);
+    const hWaterDiag = classifyWaterSource(hCity, hInfo, hometownElevation);
+    const cWaterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
+    const aqiDiag = diagnoseAirQuality(currentAqi);
 
-  const envItems = [];
-  if (elevationDiag) {
-    envItems.push(`<div class="ma-env-item">
-      <div class="ma-env-title">${elevationDiag.icon} 海拔 · ${elevationDiag.label}</div>
-      <div class="ma-env-detail">${currentElevation != null ? Math.round(currentElevation) + 'm · ' : ''}${elevationDiag.tcm}</div>
-    </div>`);
-  }
-  if (latlonDiag) {
-    envItems.push(`<div class="ma-env-item">
-      <div class="ma-env-title">🌐 经纬度</div>
-      <div class="ma-env-detail">${latlonDiag.combined}</div>
-    </div>`);
-  }
-  if (aqiDiag) {
-    const aqiExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
-    envItems.push(`<div class="ma-env-item">
-      <div class="ma-env-title">${aqiDiag.icon} 空气 · ${aqiDiag.label}</div>
-      <div class="ma-env-detail">${aqiExtra ? aqiExtra + ' · ' : ''}${aqiDiag.tcm}</div>
-    </div>`);
-  }
-  if (waterDiag) {
-    envItems.push(`<div class="ma-env-item">
-      <div class="ma-env-title">${waterDiag.icon} 水源 · ${waterDiag.label}</div>
-      <div class="ma-env-detail">${waterDiag.tcm}</div>
-    </div>`);
-  }
-  if (envItems.length > 0) {
-    envFactorsBlock = `<div class="ma-env-factors">
-      <div class="ma-env-head">🌍 环境因素</div>
-      <div class="ma-env-grid">${envItems.join('')}</div>
+    const rows = [];
+
+    // 海拔对比
+    if (hElevDiag && cElevDiag) {
+      const elevDiff = hElevDiag.band !== cElevDiag.band;
+      rows.push(`<div class="ma-cmp-row${elevDiff ? ' ma-cmp-diff' : ''}">
+        <div class="ma-cmp-label">🏔️ 海拔</div>
+        <div class="ma-cmp-home">${hometownElevation != null ? Math.round(hometownElevation)+'m' : '?'} · ${hElevDiag.label}</div>
+        <div class="ma-cmp-current">${currentElevation != null ? Math.round(currentElevation)+'m' : '?'} · ${cElevDiag.label}</div>
+      </div>`);
+    }
+
+    // 经纬度对比
+    if (hLatlonDiag && cLatlonDiag) {
+      const latDiff = hLatlonDiag.latBand !== cLatlonDiag.latBand;
+      const lonDiff = hLatlonDiag.lonBand !== cLatlonDiag.lonBand;
+      const hasDiff = latDiff || lonDiff;
+      rows.push(`<div class="ma-cmp-row${hasDiff ? ' ma-cmp-diff' : ''}">
+        <div class="ma-cmp-label">🌐 经纬度</div>
+        <div class="ma-cmp-home">${hLatlonDiag.latBand} · ${hLatlonDiag.lonBand}</div>
+        <div class="ma-cmp-current">${cLatlonDiag.latBand} · ${cLatlonDiag.lonBand}</div>
+      </div>`);
+    }
+
+    // 水源对比
+    if (hWaterDiag && cWaterDiag) {
+      const waterDiff = hWaterDiag.type !== cWaterDiag.type;
+      rows.push(`<div class="ma-cmp-row${waterDiff ? ' ma-cmp-diff' : ''}">
+        <div class="ma-cmp-label">💧 水源</div>
+        <div class="ma-cmp-home">${hWaterDiag.label}</div>
+        <div class="ma-cmp-current">${cWaterDiag.label}</div>
+      </div>`);
+    }
+
+    // 空气（仅现居地）
+    if (aqiDiag) {
+      const aqiExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
+      rows.push(`<div class="ma-cmp-row">
+        <div class="ma-cmp-label">${aqiDiag.icon} 空气</div>
+        <div class="ma-cmp-home" style="color:#bbb;">—</div>
+        <div class="ma-cmp-current">${aqiExtra ? aqiExtra + '<br>' : ''}${aqiDiag.label}</div>
+      </div>`);
+    }
+
+    // 水源详细解释（仅当两地水源不同时）
+    let waterNoteHTML = '';
+    if (hWaterDiag && cWaterDiag && hWaterDiag.type !== cWaterDiag.type) {
+      waterNoteHTML = `<div class="ma-cmp-water-note">
+        <div class="ma-cmp-water-item">🏠 ${hCity}：${hWaterDiag.tcm}</div>
+        <div class="ma-cmp-water-item">📍 ${cCity}：${cWaterDiag.tcm}</div>
+      </div>`;
+    }
+
+    envFactorsBlock = `<div class="ma-env-compare">
+      <div class="ma-env-head">🌍 两地环境对比</div>
+      <div class="ma-cmp-header">
+        <span class="ma-cmp-hlabel"></span>
+        <span class="ma-cmp-hhome">🏠 ${hCity}</span>
+        <span class="ma-cmp-hcurr">📍 ${cCity}</span>
+      </div>
+      ${rows.join('')}
+      ${waterNoteHTML}
     </div>`;
+  } else if (cInfo) {
+    // 未选家乡或同城：只展示现居地
+    const cElevDiag = diagnoseElevation(currentElevation);
+    const cLatlonDiag = diagnoseLatLon(cInfo.lat, cInfo.lon);
+    const cWaterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
+    const aqiDiag = diagnoseAirQuality(currentAqi);
+
+    const items = [];
+    if (cElevDiag) items.push(`<div class="ma-env-item"><div class="ma-env-title">${cElevDiag.icon} 海拔 · ${cElevDiag.label}</div><div class="ma-env-detail">${currentElevation != null ? Math.round(currentElevation)+'m · ' : ''}${cElevDiag.tcm}</div></div>`);
+    if (cLatlonDiag) items.push(`<div class="ma-env-item"><div class="ma-env-title">🌐 经纬度</div><div class="ma-env-detail">${cLatlonDiag.combined}</div></div>`);
+    if (cWaterDiag) items.push(`<div class="ma-env-item"><div class="ma-env-title">${cWaterDiag.icon} 水源 · ${cWaterDiag.label}</div><div class="ma-env-detail">${cWaterDiag.tcm}</div></div>`);
+    if (aqiDiag) {
+      const aqiExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
+      items.push(`<div class="ma-env-item"><div class="ma-env-title">${aqiDiag.icon} 空气 · ${aqiDiag.label}</div><div class="ma-env-detail">${aqiExtra ? aqiExtra + ' · ' : ''}${aqiDiag.tcm}</div></div>`);
+    }
+    if (items.length > 0) {
+      envFactorsBlock = `<div class="ma-env-factors"><div class="ma-env-head">🌍 环境因素</div><div class="ma-env-grid">${items.join('')}</div></div>`;
+    }
   }
 
   if (hInfo && hInfo.region !== cInfo.region) {

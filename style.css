@@ -250,6 +250,37 @@ select {
   font-size:11px; color:#888; line-height:1.5;
 }
 
+/* ===== 两地环境对比 ===== */
+.ma-env-compare {
+  background:#fafbf7; border-radius:8px; padding:10px 12px;
+  margin-bottom:10px; border:1px solid #e8ece0;
+}
+.ma-cmp-header {
+  display:grid; grid-template-columns:72px 1fr 1fr; gap:4px;
+  margin-bottom:4px; padding-bottom:4px; border-bottom:1px solid #eee;
+}
+.ma-cmp-hhome, .ma-cmp-hcurr {
+  font-size:11px; font-weight:bold; color:#8b5a2b; text-align:center;
+}
+.ma-cmp-row {
+  display:grid; grid-template-columns:72px 1fr 1fr; gap:4px;
+  padding:5px 0; border-bottom:1px solid #f5f5f0; font-size:11px; align-items:center;
+}
+.ma-cmp-row:last-child { border-bottom:none; }
+.ma-cmp-row.ma-cmp-diff { background:#fff9f0; border-radius:4px; }
+.ma-cmp-label { color:#5a3e2b; font-weight:bold; font-size:11px; }
+.ma-cmp-home, .ma-cmp-current { color:#666; text-align:center; line-height:1.4; }
+.ma-cmp-home { color:#8b7355; }
+.ma-cmp-current { color:#3e5a3e; }
+.ma-cmp-water-note {
+  margin-top:6px; padding:8px 10px; background:#fff; border-radius:6px;
+  border:1px solid #e8ece0;
+}
+.ma-cmp-water-item {
+  font-size:11px; color:#888; line-height:1.5; margin-bottom:2px;
+}
+.ma-cmp-water-item:last-child { margin-bottom:0; }
+
 /* ===== 药膳卡片 ===== */
 .refresh-hint { font-size:12px; color:#999; margin-bottom:8px; text-align:center; }
 .alert-diet-header {
