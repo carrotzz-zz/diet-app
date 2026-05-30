@@ -616,6 +616,7 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   // 视图
   document.getElementById("mainSection").style.display = "none";
   document.getElementById("resultSection").style.display = "block";
+  window.scrollTo(0, 0);
 
   // ===== 天气预警（14天剧变检测 + 自动匹配药膳） =====
   let weatherAlerts = [], weatherAlertDiets = [];
