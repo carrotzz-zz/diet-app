@@ -1003,3 +1003,24 @@ document.getElementById("backBtn").addEventListener("click", function() {
   document.getElementById("resultSection").style.display = "none";
   window.scrollTo(0, 0);
 });
+
+// ========== 字体大小调节 ==========
+const FS_KEY = 'wuxiangtie_fontsize';
+const container = document.querySelector('.container');
+const fsBtns = document.querySelectorAll('.fs-btn');
+
+function setFontSize(scale) {
+  container.style.zoom = scale;
+  fsBtns.forEach(b => b.classList.toggle('active', b.dataset.size === String(scale)));
+  try { localStorage.setItem(FS_KEY, scale); } catch(e) {}
+}
+
+fsBtns.forEach(btn => {
+  btn.addEventListener('click', () => setFontSize(parseFloat(btn.dataset.size)));
+});
+
+// 恢复上次设置
+try {
+  const saved = localStorage.getItem(FS_KEY);
+  if (saved) setFontSize(parseFloat(saved));
+} catch(e) {}
