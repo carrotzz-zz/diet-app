@@ -296,107 +296,43 @@ async function onCityChange() {
     weatherBlock = `<div class="ma-weather" style="color:#c03a2b;">⚠️ 天气数据获取失败，请检查网络</div>`;
   }
 
-  // 环境因素两地对比（海拔、经纬度、水源、空气）
+  // 环境因素两地对比（只突出真正可感知的差异）
   let envFactorsBlock = "";
   if (hInfo && cInfo && hCity !== cCity) {
     try {
-    const hElevDiag = diagnoseElevation(hometownElevation);
-    const cElevDiag = diagnoseElevation(currentElevation);
-    const hLatlonDiag = diagnoseLatLon(hInfo.lat, hInfo.lon);
-    const cLatlonDiag = diagnoseLatLon(cInfo.lat, cInfo.lon);
-    const hWaterDiag = classifyWaterSource(hCity, hInfo, hometownElevation);
-    const cWaterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
-    const hAqiDiag = diagnoseAirQuality(hometownAqi);
-    const cAqiDiag = diagnoseAirQuality(currentAqi);
+      const hElevDiag = diagnoseElevation(hometownElevation);
+      const cElevDiag = diagnoseElevation(currentElevation);
+      const hWaterDiag = classifyWaterSource(hCity, hInfo, hometownElevation);
+      const cWaterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
+      const hAqiDiag = diagnoseAirQuality(hometownAqi);
+      const cAqiDiag = diagnoseAirQuality(currentAqi);
 
-    const rows = [];
-
-    // 海拔对比
-    if (hElevDiag && cElevDiag) {
-      const elevDiff = hElevDiag.band !== cElevDiag.band;
-      rows.push(`<div class="ma-cmp-row${elevDiff ? ' ma-cmp-diff' : ''}">
-        <div class="ma-cmp-label">🏔️ 海拔</div>
-        <div class="ma-cmp-home">${hometownElevation != null ? Math.round(hometownElevation)+'m' : '?'} · ${hElevDiag.label}</div>
-        <div class="ma-cmp-current">${currentElevation != null ? Math.round(currentElevation)+'m' : '?'} · ${cElevDiag.label}</div>
-      </div>`);
-    }
-
-    // 经纬度对比
-    if (hLatlonDiag && cLatlonDiag) {
-      const latDiff = hLatlonDiag.latBand !== cLatlonDiag.latBand;
-      const lonDiff = hLatlonDiag.lonBand !== cLatlonDiag.lonBand;
-      const hasDiff = latDiff || lonDiff;
-      rows.push(`<div class="ma-cmp-row${hasDiff ? ' ma-cmp-diff' : ''}">
-        <div class="ma-cmp-label">🌐 经纬度</div>
-        <div class="ma-cmp-home">${hLatlonDiag.latBand} · ${hLatlonDiag.lonBand}</div>
-        <div class="ma-cmp-current">${cLatlonDiag.latBand} · ${cLatlonDiag.lonBand}</div>
-      </div>`);
-    }
-
-    // 水源对比
-    if (hWaterDiag && cWaterDiag) {
-      const waterDiff = hWaterDiag.type !== cWaterDiag.type;
-      rows.push(`<div class="ma-cmp-row${waterDiff ? ' ma-cmp-diff' : ''}">
-        <div class="ma-cmp-label">💧 水源</div>
-        <div class="ma-cmp-home">${hWaterDiag.label}</div>
-        <div class="ma-cmp-current">${cWaterDiag.label}</div>
-      </div>`);
-    }
-
-    // 空气对比
-    if (hAqiDiag || cAqiDiag) {
-      const hExtra = hometownAqi ? `PM2.5 ${hometownAqi.pm25 != null ? Math.round(hometownAqi.pm25) : '?'}μg/m³` : '';
-      const cExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
-      const aqiDiff = hAqiDiag && cAqiDiag && hAqiDiag.level !== cAqiDiag.level;
-      rows.push(`<div class="ma-cmp-row${aqiDiff ? ' ma-cmp-diff' : ''}">
-        <div class="ma-cmp-label">😷 空气</div>
-        <div class="ma-cmp-home">${hAqiDiag ? (hExtra ? hExtra + '<br>' : '') + hAqiDiag.label : '—'}</div>
-        <div class="ma-cmp-current">${cAqiDiag ? (cExtra ? cExtra + '<br>' : '') + cAqiDiag.label : '—'}</div>
-      </div>`);
-    }
-
-    // 水源详细解释
-    let waterNoteHTML = '';
-    if (hWaterDiag && cWaterDiag) {
-      const sameType = hWaterDiag.type === cWaterDiag.type;
-      waterNoteHTML = `<div class="ma-cmp-water-note">
-        <div class="ma-cmp-water-label">💧 ${sameType ? '两地水源（相同）' : '两地水源差异'}</div>
-        <div class="ma-cmp-water-item">🏠 ${hCity}（${hWaterDiag.label}）：${hWaterDiag.tcm}</div>
-        <div class="ma-cmp-water-item">📍 ${cCity}（${cWaterDiag.label}）：${cWaterDiag.tcm}</div>
-      </div>`;
-    }
-
-    envFactorsBlock = `<div class="ma-env-compare">
-      <div class="ma-env-head">🌍 两地环境对比</div>
-      <div class="ma-cmp-header">
-        <span class="ma-cmp-hlabel"></span>
-        <span class="ma-cmp-hhome">🏠 ${hCity}</span>
-        <span class="ma-cmp-hcurr">📍 ${cCity}</span>
-      </div>
-      ${rows.join('')}
-      ${waterNoteHTML}
-    </div>`;
+      // 白话合成（不再罗列四行数据）
+      envFactorsBlock = synthesizeEnvironmentDiff(hCity, cCity, hInfo, cInfo,
+        hElevDiag, cElevDiag, hWaterDiag, cWaterDiag, hAqiDiag, cAqiDiag,
+        hometownElevation, currentElevation, hometownAqi, currentAqi);
     } catch(e) {
       console.error('环境对比渲染失败:', e);
       envFactorsBlock = '';
     }
   } else if (cInfo) {
-    // 未选家乡或同城：只展示现居地
+    // 未选家乡或同城：只展示现居地简要环境
     const cElevDiag = diagnoseElevation(currentElevation);
-    const cLatlonDiag = diagnoseLatLon(cInfo.lat, cInfo.lon);
     const cWaterDiag = classifyWaterSource(cCity, cInfo, currentElevation);
     const aqiDiag = diagnoseAirQuality(currentAqi);
 
-    const items = [];
-    if (cElevDiag) items.push(`<div class="ma-env-item"><div class="ma-env-title">${cElevDiag.icon} 海拔 · ${cElevDiag.label}</div><div class="ma-env-detail">${currentElevation != null ? Math.round(currentElevation)+'m · ' : ''}${cElevDiag.tcm}</div></div>`);
-    if (cLatlonDiag) items.push(`<div class="ma-env-item"><div class="ma-env-title">🌐 经纬度</div><div class="ma-env-detail">${cLatlonDiag.combined}</div></div>`);
-    if (cWaterDiag) items.push(`<div class="ma-env-item"><div class="ma-env-title">${cWaterDiag.icon} 水源 · ${cWaterDiag.label}</div><div class="ma-env-detail">${cWaterDiag.tcm}</div></div>`);
+    const parts = [];
+    if (cElevDiag && currentElevation != null) parts.push(`${cElevDiag.icon} ${cElevDiag.label} · ${Math.round(currentElevation)}m — ${cElevDiag.tcm}`);
+    if (cWaterDiag) parts.push(`${cWaterDiag.icon} 水源${cWaterDiag.type} · ${cWaterDiag.label} — ${cWaterDiag.tcm}`);
     if (aqiDiag) {
-      const aqiExtra = currentAqi ? `PM2.5 ${currentAqi.pm25 != null ? Math.round(currentAqi.pm25) : '?'}μg/m³` : '';
-      items.push(`<div class="ma-env-item"><div class="ma-env-title">${aqiDiag.icon} 空气 · ${aqiDiag.label}</div><div class="ma-env-detail">${aqiExtra ? aqiExtra + ' · ' : ''}${aqiDiag.tcm}</div></div>`);
+      const aqiNote = currentAqi && currentAqi.pm25 != null ? `PM2.5 ${Math.round(currentAqi.pm25)}μg/m³ · ` : '';
+      parts.push(`${aqiDiag.icon} 空气 · ${aqiDiag.label} — ${aqiNote}${aqiDiag.tcm}`);
     }
-    if (items.length > 0) {
-      envFactorsBlock = `<div class="ma-env-factors"><div class="ma-env-head">🌍 环境因素</div><div class="ma-env-grid">${items.join('')}</div></div>`;
+    if (parts.length > 0) {
+      envFactorsBlock = `<div class="env-synthesis">
+        <div class="env-synthesis-head">🌍 ${cCity} 环境</div>
+        <div class="env-synthesis-body">${parts.map(p => `<div class="env-synthesis-item"><div class="esi-text"><span>${p}</span></div></div>`).join('')}</div>
+      </div>`;
     }
   }
 
@@ -704,9 +640,10 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     const alertIcons = { '寒潮降温':'❄️', '热浪升温':'🔥', '持续高温':'☀️', '持续阴雨':'🌧', '温差异常':'🌬' };
     const alertHTML = weatherAlerts.map(a => {
       const icon = alertIcons[a.type] || '⚠️';
-      return `<div class="alert-item"><span>${icon}</span> ${a.msg}</div>`;
+      const typeClass = a.type === '寒潮降温' ? 'alert-cold' : a.type === '热浪升温' || a.type === '持续高温' ? 'alert-hot' : a.type === '持续阴雨' ? 'alert-rain' : 'alert-wind';
+      return `<div class="alert-item ${typeClass}"><span class="alert-item-icon">${icon}</span><span>${a.msg}</span></div>`;
     }).join('');
-    guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>🌡 未来天气剧变预警</strong>${alertHTML}</div></div>`;
+    guideHtml += `<div class="reason-item warning"><span class="reason-icon">⚠️</span><div><strong>🌡 未来天气剧变预警</strong><div class="alert-list">${alertHTML}</div></div></div>`;
   }
 
   if (a.weatherDeviation && a.weatherDeviation.hasDeviation && a.weatherDeviation.level === 'high') {
@@ -778,58 +715,108 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   // 绘制七日折线图
   if (chartData) drawTempChart('tempChart', chartData);
 
-  // 药膳
+  // ===== 药膳推荐（标签切换模式）=====
   const cardsDiv = document.getElementById("dietCards");
   cardsDiv.innerHTML = "";
   document.getElementById("refreshHint").style.display = "block";
 
-  // 天气预警药膳（置顶）
+  // 收集三个标签的内容
+  const tabs = []; // { id, label, icon, html, active }
+  let usedDietIds = new Set();
+
+  // ——— 标签1：天气预警 ———
+  let weatherTabHTML = '';
   if (weatherAlertDiets.length > 0 && weatherAlerts.length > 0) {
-    const alertSection = document.createElement("div");
-    alertSection.innerHTML = `<div class="alert-diet-header">🌡 天气预警 · 应急推荐</div>`;
-    cardsDiv.appendChild(alertSection);
-    // 去重：排除已出现在主推荐里的
     const resultIds = new Set(results.map(d => d.id));
     const alertUnique = weatherAlertDiets.filter(d => !resultIds.has(d.id)).slice(0, 3);
-    alertUnique.forEach(d => {
-      const card = renderDietCard(d, true);
-      cardsDiv.appendChild(card);
-    });
-    if (alertUnique.length === 0 && weatherAlertDiets.length > 0) {
-      // 全部跟主推荐重复，取前2
-      weatherAlertDiets.slice(0, 2).forEach(d => {
-        cardsDiv.appendChild(renderDietCard(d, true));
-      });
+    const alertCards = alertUnique.length > 0 ? alertUnique : weatherAlertDiets.slice(0, 2);
+    if (alertCards.length > 0) {
+      const alertTypes = [...new Set(weatherAlerts.map(a => a.type))];
+      const typeLabels = { '寒潮降温':'降温','热浪升温':'升温','持续高温':'高温','持续阴雨':'阴雨','温差异常':'温差' };
+      const desc = alertTypes.map(t => typeLabels[t] || t).join('·');
+      const alertDesc = `<div class="tab-desc"><strong>🌡 ${cCity} · ${desc}</strong><span> — 天气骤变时提前调理，减少对身体的冲击</span></div>`;
+      weatherTabHTML = alertDesc + alertCards.map(d => { usedDietIds.add(d.id); return renderDietCard(d, true).outerHTML; }).join('');
     }
   }
 
-  // 家乡味说明
+  // ——— 标签2：融入当地 ———
+  let localTabHTML = '', localHasFullRecipes = false;
   if (crossCulture && !(hRegion === cRegion)) {
-    const ctxNote = document.createElement("div");
     const clashNote = a.foodClash ? a.foodClash.note : '';
-    ctxNote.innerHTML = `<div class="cross-culture-note">🏠 ${crossCulture.principle}${clashNote ? '<br><span style="font-size:11px;color:#999;">'+clashNote+'</span>' : ''}</div>`;
-    cardsDiv.appendChild(ctxNote);
-  }
+    const homeLabel = crossCulture.homeTaste || '';
+    const currLabel = a.currFood ? a.currFood.taste : '';
+    const challengeLabel = crossCulture.challenge === '寒' ? '寒冷' : crossCulture.challenge === '燥' ? '干燥' : '湿气';
+    const shortPrinciple = crossCulture.principle.split('——')[0].trim();
+    const localDesc = `<div class="tab-desc"><strong>🏠 ${hCity} → 📍 ${cCity}</strong><span> — 从${homeLabel}到${currLabel}，${shortPrinciple}</span></div>`;
 
-  // 主推荐
-  if (results.length === 0) {
-    cardsDiv.innerHTML += "<p>😔 暂无匹配的药膳，请调整偏好。</p>";
-  } else {
-    const mainHeader = document.createElement("div");
-    mainHeader.innerHTML = `<div class="alert-diet-header" style="background:#fafaf7;color:#5a3e2b;">🍲 体质调理推荐</div>`;
-    cardsDiv.appendChild(mainHeader);
-    results.forEach(d => {
-      cardsDiv.appendChild(renderDietCard(d, false));
+    const crossDietMatches = [];
+    crossCulture.foods.forEach(foodName => {
+      const coreName = foodName.replace(/[（(].+[）)]/g, '').trim();
+      const match = diets.find(d => {
+        const dCore = d.name.replace(/[（(].+[）)]/g, '').trim();
+        return dCore.includes(coreName) || coreName.includes(dCore) ||
+               foodName.includes(d.name) || d.name.includes(coreName);
+      });
+      if (match && !crossDietMatches.some(m => m.id === match.id)) crossDietMatches.push(match);
     });
+
+    if (crossDietMatches.length > 0) {
+      localHasFullRecipes = true;
+      localTabHTML = localDesc + crossDietMatches.slice(0, 3).map(d => { usedDietIds.add(d.id); return renderDietCard(d, false).outerHTML; }).join('');
+    } else {
+      localTabHTML = localDesc + `<div class="ccc-foods">${crossCulture.foods.slice(0, 4).map(f => `<span class="ccc-food-chip">${f}</span>`).join(' ')}</div>`;
+    }
   }
 
-  // 兜底：全部结果不足3道，追加季节通用款
-  if (cardsDiv.children.length < 3) {
-    const fallback = diets.filter(d => d.season.includes(currentSeason) && !d.avoid.includes(con.primary)).slice(0, 3);
-    fallback.forEach(d => {
-      if (!results.some(r => r.id === d.id)) {
-        cardsDiv.appendChild(renderDietCard(d, false));
-      }
+  // ——— 标签3：体质调理 ———
+  let bodyTabHTML = '';
+  const plainDesc = CONST_PLAIN[con.primary] || '';
+  const bodyShort = plainDesc ? plainDesc.split('——')[0] : con.primary;
+  const bodySub = plainDesc ? (plainDesc.split('——')[1] || plainDesc.split('——')[0]) : '这些药膳针对你的体质和时令搭配';
+  const bodyDesc = `<div class="tab-desc"><strong>🧬 ${con.primary}${con.secondary ? '兼' + con.secondary : ''} · ${currentSeason}·${qi.keInfo.evil}邪当令</strong><span> — ${bodySub}</span></div>`;
+  if (results.length > 0) {
+    bodyTabHTML = bodyDesc + results.filter(d => !usedDietIds.has(d.id)).map(d => renderDietCard(d, false).outerHTML).join('');
+    // 如果去重后不够，补回来
+    if (results.filter(d => !usedDietIds.has(d.id)).length === 0) {
+      bodyTabHTML = bodyDesc + results.slice(0, 6).map(d => renderDietCard(d, false).outerHTML).join('');
+    }
+  }
+
+  // 兜底
+  if (!bodyTabHTML) {
+    const fallback = diets.filter(d => d.season.includes(currentSeason) && !d.avoid.includes(con.primary)).slice(0, 4);
+    if (fallback.length > 0) {
+      bodyTabHTML = fallback.map(d => renderDietCard(d, false).outerHTML).join('');
+    }
+  }
+  if (!bodyTabHTML) bodyTabHTML = '<p style="text-align:center;color:#999;">😔 暂无匹配的药膳，请调整偏好。</p>';
+
+  // 构建标签列表
+  if (weatherTabHTML) tabs.push({ id:'weather', label:'天气预警', icon:'🌡', html:weatherTabHTML });
+  if (localTabHTML) tabs.push({ id:'local', label:'融入当地', icon:'🏠', html:localTabHTML });
+  tabs.push({ id:'body', label:'体质调理', icon:'🍲', html:bodyTabHTML });
+
+  // 默认选中「体质调理」，如果只有它一个就不需要标签切换
+  if (tabs.length <= 1) {
+    cardsDiv.innerHTML = `<div class="alert-diet-header" style="background:#fafaf7;color:#5a3e2b;">🍲 推荐药膳</div>` + bodyTabHTML;
+  } else {
+    // 找到默认激活的标签（体质调理优先）
+    const activeId = tabs.find(t => t.id === 'body') ? 'body' : tabs[0].id;
+    const btnsHTML = tabs.map(t => `<button class="dst-btn${t.id === activeId ? ' active' : ''}" data-dst="${t.id}">${t.icon} ${t.label}</button>`).join('');
+    const panelsHTML = tabs.map(t => `<div class="dsp-panel${t.id === activeId ? ' active' : ''}" id="dst-panel-${t.id}">${t.html}</div>`).join('');
+
+    cardsDiv.innerHTML = `<div class="diet-section-tabs">${btnsHTML}</div><div class="diet-section-panels">${panelsHTML}</div>`;
+
+    // 绑定切换事件
+    cardsDiv.querySelectorAll('.dst-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const targetId = this.dataset.dst;
+        cardsDiv.querySelectorAll('.dst-btn').forEach(b => b.classList.remove('active'));
+        cardsDiv.querySelectorAll('.dsp-panel').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        const panel = document.getElementById('dst-panel-' + targetId);
+        if (panel) panel.classList.add('active');
+      });
     });
   }
 });
@@ -1022,23 +1009,22 @@ document.getElementById("backBtn").addEventListener("click", function() {
   window.scrollTo(0, 0);
 });
 
-// ========== 字体大小调节 ==========
+// ========== 字体大小调节（滑块）==========
 const FS_KEY = 'wuxiangtie_fontsize';
 const container = document.querySelector('.container');
-const fsBtns = document.querySelectorAll('.fs-btn');
+const fsSlider = document.getElementById('fsSlider');
 
 function setFontSize(scale) {
   container.style.zoom = scale;
-  fsBtns.forEach(b => b.classList.toggle('active', b.dataset.size === String(scale)));
+  if (fsSlider && parseFloat(fsSlider.value) !== scale) fsSlider.value = scale;
   try { localStorage.setItem(FS_KEY, scale); } catch(e) {}
 }
 
-fsBtns.forEach(btn => {
-  btn.addEventListener('click', () => setFontSize(parseFloat(btn.dataset.size)));
-});
-
-// 恢复上次设置
-try {
-  const saved = localStorage.getItem(FS_KEY);
-  if (saved) setFontSize(parseFloat(saved));
-} catch(e) {}
+if (fsSlider) {
+  fsSlider.addEventListener('input', () => setFontSize(parseFloat(fsSlider.value)));
+  // 恢复上次设置
+  try {
+    const saved = localStorage.getItem(FS_KEY);
+    if (saved) setFontSize(parseFloat(saved));
+  } catch(e) {}
+}

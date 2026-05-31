@@ -904,13 +904,102 @@ function diagnoseLatLon(lat, lon) {
   };
 }
 
-// 空气质量 → TCM
+// 空气质量 → TCM（PM2.5 用中国标准：0-35优 35-75良 75+污染；欧洲AQI仅作PM2.5缺失时的参考）
 function diagnoseAirQuality(aqiData) {
   if (!aqiData) return null;
   const pm25 = aqiData.pm25;
   const aqi = aqiData.aqi;
-  if (pm25 > 75 || aqi > 3) return { level:'high', label:'浊毒犯肺', tcm:'肺气不宣，浊毒犯肺 — 建议减少户外活动', icon:'😷' };
-  if ((pm25 >= 35 && pm25 <= 75) || aqi === 3) return { level:'medium', label:'微浊', tcm:'肺气轻微受影响 — 敏感人群注意防护', icon:'🌫️' };
-  return { level:'low', label:'空气清', tcm:'肺气通畅', icon:'🍃' };
+  // 以 PM2.5 为主要判断依据
+  if (pm25 != null) {
+    if (pm25 > 75) return { level:'high', label:'浊毒犯肺', tcm:'PM2.5偏高，肺气不宣 — 建议减少户外活动', icon:'😷' };
+    if (pm25 >= 35) return { level:'medium', label:'微浊', tcm:'空气质量一般 — 敏感人群注意防护', icon:'🌫️' };
+    return { level:'low', label:'空气清', tcm:'肺气通畅', icon:'🍃' };
+  }
+  // PM2.5 缺失时降级用欧洲 AQI 参考
+  if (aqi != null) {
+    if (aqi >= 4) return { level:'high', label:'浊毒犯肺', tcm:'空气质量较差 — 建议减少户外活动', icon:'😷' };
+    if (aqi === 3) return { level:'medium', label:'微浊', tcm:'空气质量一般 — 敏感人群注意防护', icon:'🌫️' };
+    return { level:'low', label:'空气清', tcm:'肺气通畅', icon:'🍃' };
+  }
+  return null;
+}
+
+// ========== 两地环境差异白话合成 ==========
+// 把海拔/经纬度/水源/空气四维数据合成 1-2 个真正可感知的变化
+function synthesizeEnvironmentDiff(hCity, cCity, hInfo, cInfo, hElevDiag, cElevDiag, hWaterDiag, cWaterDiag, hAqiDiag, cAqiDiag, hElevM, cElevM, hAqiData, cAqiData) {
+  const keyPoints = [];    // 值得单说的差异
+  const minorNotes = [];   // 相近因素，一句话带过
+
+  // —— 海拔：只在不同 band 时值得提 ——
+  const elevDiff = hElevDiag && cElevDiag && hElevDiag.band !== cElevDiag.band;
+  if (elevDiff) {
+    const hM = hElevM != null ? Math.round(hElevM) : null;
+    const cM = cElevM != null ? Math.round(cElevM) : null;
+    const delta = (hM != null && cM != null) ? cM - hM : null;
+    const dir = delta != null ? (delta > 0 ? '升高了' : '降低了') : '变了';
+    const mag = delta != null ? Math.abs(delta) : null;
+    const magStr = mag != null ? `（${mag}m）` : '';
+    const feel = delta != null
+      ? (delta > 800 ? '空气明显变稀薄，动一动就喘' : delta > 300 ? '爬楼会比以前容易喘' : '')
+      : '';
+    keyPoints.push({
+      icon: '🏔️', title: `海拔${dir}${magStr}`,
+      body: `从${hElevDiag.label}到${cElevDiag.label}${feel ? '，' + feel : ''}。${cElevDiag.tcm}`,
+    });
+  } else if (hElevDiag && cElevDiag) {
+    minorNotes.push(`两地同属${hElevDiag.label}，海拔相近`);
+  }
+
+  // —— 水源：类型不同时才展开 ——
+  const waterDiff = hWaterDiag && cWaterDiag && hWaterDiag.type !== cWaterDiag.type;
+  if (waterDiff) {
+    const fromLabel = hWaterDiag.type.replace('型','');
+    const toLabel = cWaterDiag.type.replace('型','');
+    keyPoints.push({
+      icon: '💧', title: `水源从「${fromLabel}」变「${toLabel}」`,
+      body: hWaterDiag.tcm + ' → ' + cWaterDiag.tcm,
+    });
+  } else if (hWaterDiag && cWaterDiag) {
+    minorNotes.push(`水源同属${hWaterDiag.type}，差异不大`);
+  }
+
+  // —— 空气：只在一边明显差时才提 ——
+  const aqiDiff = hAqiDiag && cAqiDiag && hAqiDiag.level !== cAqiDiag.level;
+  if (aqiDiff) {
+    const worseSide = (hAqiDiag.level === 'high' || (hAqiDiag.level === 'medium' && cAqiDiag.level === 'low')) ? 'home' : 'current';
+    const worseDiag = worseSide === 'home' ? hAqiDiag : cAqiDiag;
+    const worseCity = worseSide === 'home' ? hCity : cCity;
+    keyPoints.push({
+      icon: '😷', title: `${worseCity}空气质量${worseDiag.level === 'high' ? '明显较差' : '稍差'}`,
+      body: `家乡${hAqiDiag.label}，现居地${cAqiDiag.label}。${worseDiag.tcm}`,
+    });
+  } else if (hAqiDiag && cAqiDiag && hAqiDiag.level === 'low' && cAqiDiag.level === 'low') {
+    minorNotes.push('空气质量都不错');
+  }
+
+  // —— 组装 HTML ——
+  if (keyPoints.length === 0) {
+    return `<div class="env-synthesis">
+      <div class="env-synthesis-head">🌍 两地环境</div>
+      <p class="env-synthesis-ok">✅ ${hCity} 和 ${cCity} 环境相近，${minorNotes.join('，') || '身体适应压力不大'}。</p>
+    </div>`;
+  }
+
+  const pointsHTML = keyPoints.map(p => `
+    <div class="env-synthesis-item">
+      <span class="esi-icon">${p.icon}</span>
+      <div class="esi-text"><strong>${p.title}</strong><span>${p.body}</span></div>
+    </div>
+  `).join('');
+
+  const notesHTML = minorNotes.length > 0
+    ? `<div class="env-synthesis-notes">${minorNotes.join('；')}</div>`
+    : '';
+
+  return `<div class="env-synthesis">
+    <div class="env-synthesis-head">🌍 两地环境变化 — ${hCity} → ${cCity}</div>
+    <div class="env-synthesis-body">${pointsHTML}</div>
+    ${notesHTML}
+  </div>`;
 }
 
