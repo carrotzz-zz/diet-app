@@ -1,0 +1,8 @@
+node_modules/
+.edgeone/
+promo/
+*.zip
+*.png
+.env
+.DS_Store
+Thumbs.db
