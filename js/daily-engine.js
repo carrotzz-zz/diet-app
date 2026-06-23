@@ -208,7 +208,7 @@ function getRecommendation(month, temp, weather, mainTenGod) {
 async function fetchWeather(lat, lon) {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum&timezone=Asia/Shanghai&forecast_days=1`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) }); // 8秒超时，防止请求挂起
     const wx = await res.json();
     const d = wx.daily;
     const code = d.weathercode[0];

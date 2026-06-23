@@ -125,6 +125,7 @@ function shuffleArray(arr) {
 
 // ========== 本地留存 ==========
 const LS_KEY = 'wuxiangtie_data';
+const LS_TTL = 7 * 24 * 60 * 60 * 1000; // 7天后自动清除
 function saveToLocal() {
   const data = {
     hometownProvince: document.getElementById("hometownProvince").value,
@@ -133,6 +134,7 @@ function saveToLocal() {
     currentCity: currentCitySelect.value,
     sliders: {},
     prefs: {},
+    _ts: Date.now(), // 记录存储时间，用于过期清除
   };
   document.querySelectorAll('input[type="range"]').forEach(s => {
     if (parseInt(s.value) !== 1) data.sliders[s.id] = parseInt(s.value);
@@ -148,6 +150,11 @@ function restoreFromLocal() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return;
     const data = JSON.parse(raw);
+    // 过期检查：超过TTL自动清除
+    if (data._ts && (Date.now() - data._ts > LS_TTL)) {
+      localStorage.removeItem(LS_KEY);
+      return;
+    }
     if (data.hometownProvince) {
       document.getElementById("hometownProvince").value = data.hometownProvince;
       populateCitySelect("hometownProvince", "hometownCity");
@@ -200,16 +207,21 @@ restoreFromLocal();
     hourSel.innerHTML += `<option value="${h}">${shichenLabels[i]}</option>`;
   }
 
-  // 恢复 localStorage
+  // 恢复 localStorage（带过期检查）
   try {
     const saved = JSON.parse(localStorage.getItem('wuxiangtie_bazi') || '{}');
-    if (saved.year) yearSel.value = saved.year;
-    if (saved.month) monthSel.value = saved.month;
-    if (saved.day) daySel.value = saved.day;
-    if (saved.hour !== undefined) hourSel.value = saved.hour;
-    if (saved.gender) {
-      const r = document.querySelector(`input[name="birthGender"][value="${saved.gender}"]`);
-      if (r) r.checked = true;
+    // 过期检查：超过7天自动清除出生信息
+    if (saved._ts && (Date.now() - saved._ts > 7 * 24 * 60 * 60 * 1000)) {
+      localStorage.removeItem('wuxiangtie_bazi');
+    } else {
+      if (saved.year) yearSel.value = saved.year;
+      if (saved.month) monthSel.value = saved.month;
+      if (saved.day) daySel.value = saved.day;
+      if (saved.hour !== undefined) hourSel.value = saved.hour;
+      if (saved.gender) {
+        const r = document.querySelector(`input[name="birthGender"][value="${saved.gender}"]`);
+        if (r) r.checked = true;
+      }
     }
   } catch(e) {}
 
@@ -219,6 +231,7 @@ restoreFromLocal();
       year: yearSel.value, month: monthSel.value,
       day: daySel.value, hour: hourSel.value,
       gender: (document.querySelector('input[name="birthGender"]:checked') || {}).value || '',
+      _ts: Date.now(), // 记录存储时间，用于过期清除
     };
     try { localStorage.setItem('wuxiangtie_bazi', JSON.stringify(data)); } catch(e) {}
     updateBaziPreview();
