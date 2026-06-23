@@ -97,7 +97,7 @@ function scoreDiet(diet, analysis, constitution, prefs) {
 }
 
 // ========== 推荐 ==========
-document.getElementById("submitBtn").addEventListener("click", function() {
+document.getElementById("submitBtn").addEventListener("click", async function() {
   const con = determineConstitution();
   const cCity = currentCitySelect.value, hCity = hometownCitySelect.value;
   const cInfo = cityData[cCity], hInfo = cityData[hCity];
@@ -109,6 +109,27 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     alert("你打的分数普遍偏低，信息不足以判断体质。请认真重新测评。");
     window.scrollTo(0, 0);
     return;
+  }
+
+  // ===== 八字排盘 =====
+  const bYear = parseInt(document.getElementById('birthYear').value);
+  const bMonth = parseInt(document.getElementById('birthMonth').value);
+  const bDay = parseInt(document.getElementById('birthDay').value);
+  const bHour = parseInt(document.getElementById('birthHour').value);
+  const bGender = (document.querySelector('input[name="birthGender"]:checked') || {}).value;
+  let baziData = null;
+  if (bYear && bMonth && bDay && !isNaN(bHour) && bGender) {
+    try { baziData = calcBazi(bYear, bMonth, bDay, bHour, bGender); } catch(e) { console.warn('八字排盘失败', e); }
+  }
+
+  // ===== 每日运势卡片（异步，需要天气） =====
+  let dailyCardData = null;
+  if (baziData) {
+    try {
+      const lat = cInfo.lat || (currentWeather && currentWeather.lat);
+      const lon = cInfo.lon || (currentWeather && currentWeather.lon);
+      dailyCardData = await generateDailyCard(baziData, new Date(), lat, lon);
+    } catch(e) { console.warn('每日卡片生成失败', e); }
   }
 
   const hRegion = hInfo.region, cRegion = cInfo.region;
@@ -245,6 +266,53 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     bannerHTML = `<div class="migrant-banner"><div class="mb-route">🏠 <strong>${hCity}</strong> &nbsp;→&nbsp; 📍 <strong>${cCity}</strong></div><div class="mb-note">${diffNote}</div></div>`;
   }
   document.getElementById("migrantBanner").innerHTML = bannerHTML;
+
+  // ===== 每日运势卡片 =====
+  const dailyDiv = document.getElementById('dailyCard');
+  if (dailyCardData) {
+    const card = dailyCardData;
+    const wuxingColor = { '木':'#52c41a','火':'#f5222d','土':'#d48806','金':'#bfbfbf','水':'#1890ff' };
+    const wxColor = wuxingColor[baziData.dayMaster.wuxing] || '#5a3e2b';
+    const interactionTag = {
+      '冲': '<span class="tag-chong">冲</span>',
+      '合': '<span class="tag-he">合</span>',
+      '刑': '<span class="tag-xing">刑</span>',
+      '害': '<span class="tag-hai">害</span>',
+    }[card.branchInteraction.type] || '';
+    const kongTag = card.kong ? '<span class="tag-kong">空亡</span>' : '';
+
+    let weatherHTML = '';
+    if (card.weather) {
+      weatherHTML = `<div class="dc-weather">
+        <span class="dc-w-icon">${card.weather.emoji}</span>
+        <span class="dc-w-temp">${card.weather.minTemp}~${card.weather.maxTemp}°C</span>
+        <span class="dc-w-desc">${card.weather.weather}</span>
+      </div>`;
+    }
+
+    dailyDiv.innerHTML = `
+      <div class="daily-card">
+        <div class="dc-header">
+          <div class="dc-date">${card.dateStr}</div>
+          <div class="dc-pillar">流日 <strong>${card.dayPillar}</strong> · <span style="color:${wxColor}">${card.mainTenGod}</span> ${interactionTag} ${kongTag}</div>
+        </div>
+        ${weatherHTML}
+        <div class="dc-emotion">${card.emotionDesc}</div>
+        ${card.bodyNote ? `<div class="dc-body">💪 ${card.bodyNote}</div>` : ''}
+        <div class="dc-shichen">⏰ ${card.shichenTip}</div>
+        ${card.clothing ? `<div class="dc-clothing">👕 ${card.clothing}</div>` : ''}
+        ${card.recommendation ? `<div class="dc-rec">💡 ${card.recommendation}</div>` : ''}
+        <div class="dc-quote">
+          <div class="dc-q-classical">「${card.quote.classical}」</div>
+          <div class="dc-q-modern">${card.quote.modern}</div>
+          <div class="dc-q-tie">${card.quote.tieToToday}</div>
+        </div>
+        <details class="dc-detail"><summary>日柱底色</summary><p>${card.dayNature}</p></details>
+      </div>
+    `;
+  } else {
+    dailyDiv.innerHTML = '<div class="daily-card empty"><p>填写出生信息后可查看每日运势</p></div>';
+  }
 
   // 体质画像
   if (con.isBalanced) {

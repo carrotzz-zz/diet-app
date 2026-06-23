@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node *)",
+      "Bash(git *)",
+      "Bash(gh api *)",
+      "Bash(curl *)",
+      "WebFetch(domain:carrotzz-zz.github.io)",
+      "Bash(python -m http.server 8080)",
+      "Bash(kill %1)",
+      "Bash(ping -n 3 github.com)",
+      "Bash(ssh *)",
+      "Bash(ssh-keyscan github.com)",
+      "Bash(ssh-keygen -t ed25519 -C \"carrotzz-zz@github\" -f ~/.ssh/id_ed25519 -N \"\")",
+      "Bash(fc-list :lang=zh)",
+      "Bash(python *)",
+      "Bash(pip install *)",
+      "Bash(where python *)",
+      "Bash(npm -v)",
+      "Bash(npx playwright *)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(ssh-keyscan gitee.com)",
+      "Bash(start *)",
+      "WebSearch",
+      "WebFetch(domain:gitee.com)",
+      "WebFetch(domain:help.gitee.com)",
+      "Bash(npx *)",
+      "Bash(cd *)",
+      "Bash(rm -rf .edgeone)",
+      "Bash(rm -rf promo/node_modules)",
+      "Bash(rm -rf promo/)",
+      "Bash(cmd *)",
+      "WebFetch(domain:tcb.cloud.tencent.com)",
+      "Bash(npm list *)",
+      "Bash(tcb --version)",
+      "Bash(tcb login *)",
+      "Bash(tcb hosting *)"
+    ]
+  }
+}

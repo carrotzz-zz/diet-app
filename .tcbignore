@@ -1,0 +1,10 @@
+.git
+.gitignore
+.tcbignore
+.claude
+CLAUDE.md
+.edgeone
+promo
+node_modules
+*.zip
+*.png

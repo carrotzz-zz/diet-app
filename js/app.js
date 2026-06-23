@@ -181,6 +181,72 @@ document.querySelectorAll('.pref-options').forEach(div => div.addEventListener("
 // 首次加载恢复
 restoreFromLocal();
 
+// ========== 出生信息下拉初始化 ==========
+(function initBaziInputs() {
+  const yearSel = document.getElementById('birthYear');
+  const monthSel = document.getElementById('birthMonth');
+  const daySel = document.getElementById('birthDay');
+  const hourSel = document.getElementById('birthHour');
+  if (!yearSel) return;
+
+  for (let y = 1950; y <= 2015; y++) yearSel.innerHTML += `<option value="${y}">${y}年</option>`;
+  for (let m = 1; m <= 12; m++) monthSel.innerHTML += `<option value="${m}">${m}月</option>`;
+  for (let d = 1; d <= 31; d++) daySel.innerHTML += `<option value="${d}">${d}日</option>`;
+
+  const shichenLabels = ['子时(23-1点)','丑时(1-3点)','寅时(3-5点)','卯时(5-7点)','辰时(7-9点)','巳时(9-11点)','午时(11-13点)','未时(13-15点)','申时(15-17点)','酉时(17-19点)','戌时(19-21点)','亥时(21-23点)'];
+  // 时辰对应的小时值（子时=0, 丑时=2, ... 亥时=22）
+  for (let i = 0; i < 12; i++) {
+    const h = i === 0 ? 0 : i * 2;
+    hourSel.innerHTML += `<option value="${h}">${shichenLabels[i]}</option>`;
+  }
+
+  // 恢复 localStorage
+  try {
+    const saved = JSON.parse(localStorage.getItem('wuxiangtie_bazi') || '{}');
+    if (saved.year) yearSel.value = saved.year;
+    if (saved.month) monthSel.value = saved.month;
+    if (saved.day) daySel.value = saved.day;
+    if (saved.hour !== undefined) hourSel.value = saved.hour;
+    if (saved.gender) {
+      const r = document.querySelector(`input[name="birthGender"][value="${saved.gender}"]`);
+      if (r) r.checked = true;
+    }
+  } catch(e) {}
+
+  // 保存
+  const saveBazi = () => {
+    const data = {
+      year: yearSel.value, month: monthSel.value,
+      day: daySel.value, hour: hourSel.value,
+      gender: (document.querySelector('input[name="birthGender"]:checked') || {}).value || '',
+    };
+    try { localStorage.setItem('wuxiangtie_bazi', JSON.stringify(data)); } catch(e) {}
+    updateBaziPreview();
+  };
+  [yearSel, monthSel, daySel, hourSel].forEach(s => s.addEventListener('change', saveBazi));
+  document.querySelectorAll('input[name="birthGender"]').forEach(r => r.addEventListener('change', saveBazi));
+
+  function updateBaziPreview() {
+    const y = parseInt(yearSel.value), m = parseInt(monthSel.value), d = parseInt(daySel.value), h = parseInt(hourSel.value);
+    const g = (document.querySelector('input[name="birthGender"]:checked') || {}).value;
+    const preview = document.getElementById('baziPreview');
+    if (y && m && d && h !== NaN && g) {
+      try {
+        const bazi = calcBazi(y, m, d, h, g);
+        preview.style.display = 'block';
+        const wuxingEmojis = { '木':'🌿','火':'🔥','土':'🌍','金':'⚔️','水':'💧' };
+        preview.innerHTML = `
+          <div class="bazi-pillars">${bazi.bazi.map(p => `<span class="bazi-pillar">${p.gan}${p.zhi}</span>`).join('')}</div>
+          <div class="bazi-info">日主 <strong>${bazi.dayMaster.gan}${bazi.dayMaster.zhi}</strong> · ${bazi.dayMaster.wuxing}${wuxingEmojis[bazi.dayMaster.wuxing]} · ${bazi.bazi.map(p => p.wuxing).join('')}</div>
+        `;
+      } catch(e) { preview.style.display = 'none'; }
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+  updateBaziPreview();
+})();
+
 // ========== 返回 ==========
 document.getElementById("backBtn").addEventListener("click", function() {
   document.getElementById("mainSection").style.display = "block";

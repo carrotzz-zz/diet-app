@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>吾乡帖</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="main.css">
 </head>
 <body>
   <div class="container">
@@ -17,6 +17,25 @@
     </div>
 
     <div id="mainSection">
+
+      <!-- ⓪ 出生信息（八字排盘用） -->
+      <h2>⓪ 你的出生信息</h2>
+      <p class="tip">用于八字排盘和每日运势推算，公历日期即可</p>
+      <div class="bazi-input">
+        <div class="bazi-row">
+          <select id="birthYear"><option value="">年</option></select>
+          <select id="birthMonth"><option value="">月</option></select>
+          <select id="birthDay"><option value="">日</option></select>
+        </div>
+        <div class="bazi-row">
+          <select id="birthHour"><option value="">时辰</option></select>
+          <div class="gender-pick">
+            <label class="pref-btn single"><input type="radio" name="birthGender" value="男"><span>男</span></label>
+            <label class="pref-btn single"><input type="radio" name="birthGender" value="女"><span>女</span></label>
+          </div>
+        </div>
+        <div id="baziPreview" class="bazi-preview" style="display:none;"></div>
+      </div>
 
       <!-- ① 家乡 + 现居地 -->
       <h2>① 你从哪里来，现在在哪里</h2>
@@ -90,6 +109,10 @@
 
     <div id="resultSection" style="display: none;">
       <div id="migrantBanner"></div>
+
+      <h2>🎴 今日运势</h2>
+      <div id="dailyCard"></div>
+
       <h2>📋 你的体质画像</h2>
       <div id="constitutionResult"></div>
 
@@ -122,6 +145,8 @@
     </footer>
   </div>
 
+  <script src="js/bazi-engine.js"></script>
+  <script src="js/daily-engine.js"></script>
   <script src="js/wuyunliuqi.js"></script>
   <script src="js/water-source-db.js"></script>
   <script src="data/data.js"></script>
